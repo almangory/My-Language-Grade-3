@@ -97,6 +97,30 @@ export default function App() {
     };
   }, []);
 
+  // Proactively clear stale caches and force update check to avoid service worker caching issues
+  useEffect(() => {
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        keys.forEach((key) => {
+          if (key !== 'lughaty-v4') {
+            caches.delete(key).then(() => {
+              console.log('Cleared stale cache:', key);
+            });
+          }
+        });
+      });
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.update().then(() => {
+            console.log('Forced Service Worker update check on mount');
+          });
+        });
+      });
+    }
+  }, []);
+
   // Handle messages from Service Worker
   useEffect(() => {
     const handleServiceWorkerMessage = (event: MessageEvent) => {
