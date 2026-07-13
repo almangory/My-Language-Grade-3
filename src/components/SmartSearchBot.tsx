@@ -97,6 +97,27 @@ export default function SmartSearchBot() {
   const [recognitionError, setRecognitionError] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close when clicking outside of the assistant container
+  useEffect(() => {
+    function handleClickOutside(event: TouchEvent | MouseEvent) {
+      if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        setIsSpeaking(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -260,7 +281,7 @@ export default function SmartSearchBot() {
   };
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 select-none font-sans" dir="rtl">
+    <div ref={containerRef} className="fixed bottom-6 left-6 z-50 select-none font-sans" dir="rtl">
       {/* 1. FLOATING ACTION BUTTON (حرف الضاد) */}
       {!isOpen && (
         <button
