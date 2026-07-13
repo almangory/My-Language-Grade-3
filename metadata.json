@@ -1,0 +1,10 @@
+{
+  "name": "Remix: Remix: كتاب اللغة العربية التفاعلي - الصف الثالث",
+  "description": "منهج اللغة العربية التفاعلي للصف الثالث الابتدائي - المنهج السوداني، يتضمن نصوص القراءة، القصائد الشعرية المنسقة، تمارين تفاعلية مع حلول نموذجية، ودعم نطق النصوص للأطفال بعمر 8 سنوات.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
