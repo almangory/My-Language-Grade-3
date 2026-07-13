@@ -127,6 +127,103 @@ export default function LessonView({ lesson }: LessonViewProps) {
   const [activeCharIndex, setActiveCharIndex] = React.useState<number>(-1);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
+  // Reading Mode States (with LocalStorage persistence)
+  const [readingMode, setReadingMode] = useState<'standard' | 'warm' | 'soft-dark'>(() => {
+    try {
+      return (localStorage.getItem('reading_mode') as 'standard' | 'warm' | 'soft-dark') || 'standard';
+    } catch {
+      return 'standard';
+    }
+  });
+  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg' | 'xl'>(() => {
+    try {
+      return (localStorage.getItem('reading_font_size') as 'sm' | 'md' | 'lg' | 'xl') || 'md';
+    } catch {
+      return 'md';
+    }
+  });
+  const [fontWeight, setFontWeight] = useState<'normal' | 'bold' | 'black'>(() => {
+    try {
+      return (localStorage.getItem('reading_font_weight') as 'normal' | 'bold' | 'black') || 'bold';
+    } catch {
+      return 'bold';
+    }
+  });
+  const [textWidth, setTextWidth] = useState<'narrow' | 'medium' | 'wide'>(() => {
+    try {
+      return (localStorage.getItem('reading_text_width') as 'narrow' | 'medium' | 'wide') || 'medium';
+    } catch {
+      return 'medium';
+    }
+  });
+
+  // Persist settings
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('reading_mode', readingMode);
+    } catch (e) {}
+  }, [readingMode]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('reading_font_size', fontSize);
+    } catch (e) {}
+  }, [fontSize]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('reading_font_weight', fontWeight);
+    } catch (e) {}
+  }, [fontWeight]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('reading_text_width', textWidth);
+    } catch (e) {}
+  }, [textWidth]);
+
+  // Color mapping helpers
+  const getTextColor = (mode: 'standard' | 'warm' | 'soft-dark') => {
+    if (mode === 'standard') return 'text-charcoal';
+    if (mode === 'warm') return 'text-[#4E3620]';
+    return 'text-[#F4ECE1]';
+  };
+
+  const getHoverBg = (mode: 'standard' | 'warm' | 'soft-dark') => {
+    if (mode === 'standard') return 'hover:bg-yellow-accent/40 hover:text-coral';
+    if (mode === 'warm') return 'hover:bg-[#EAD4AC]/40 hover:text-[#C84B31]';
+    return 'hover:bg-[#4E3D33] hover:text-[#FFE66D]';
+  };
+
+  const getHighlightedClass = (mode: 'standard' | 'warm' | 'soft-dark') => {
+    if (mode === 'standard') return 'bg-yellow-200 text-[#5B3E1B] font-extrabold scale-105 shadow-sm border-yellow-400';
+    if (mode === 'warm') return 'bg-[#EAD4AC] text-[#3D2305] font-extrabold scale-105 shadow-sm border-amber-500';
+    return 'bg-yellow-accent text-charcoal font-extrabold scale-105 shadow-sm border-yellow-300';
+  };
+
+  const getStanzaHoverBg = (mode: 'standard' | 'warm' | 'soft-dark') => {
+    if (mode === 'standard') return 'hover:bg-cream/40 hover:border-yellow-border/60';
+    if (mode === 'warm') return 'hover:bg-[#F2E7CD]/45 hover:border-amber-300/60';
+    return 'hover:bg-[#3D332B] hover:border-[#4A3D33]/60';
+  };
+
+  // Font style mappings
+  const fontSizeClass = 
+    fontSize === 'sm' ? 'text-base md:text-lg' : 
+    fontSize === 'md' ? 'text-lg md:text-xl' : 
+    fontSize === 'lg' ? 'text-xl md:text-2xl' : 
+    'text-2xl md:text-3xl lg:text-4xl';
+
+  const fontWeightClass = 
+    fontWeight === 'normal' ? 'font-semibold' : 
+    fontWeight === 'bold' ? 'font-bold' : 
+    'font-black';
+
+  const textWidthClass = 
+    textWidth === 'narrow' ? 'max-w-xl' : 
+    textWidth === 'medium' ? 'max-w-3xl' : 
+    'max-w-full';
+
   // Speech synthesis helpers to speak single words on demand
   const speakWord = (word: string) => {
     if ('speechSynthesis' in window) {
@@ -191,6 +288,10 @@ export default function LessonView({ lesson }: LessonViewProps) {
           const absEnd = prefixLength + token.end;
           const isHighlighted = activeCharIndex >= absStart && activeCharIndex < absEnd;
 
+          const highlightStyle = isHighlighted
+            ? getHighlightedClass(readingMode)
+            : `${getTextColor(readingMode)} ${getHoverBg(readingMode)} border-transparent`;
+
           return (
             <span key={idx} className="inline-block">
               <span
@@ -198,11 +299,7 @@ export default function LessonView({ lesson }: LessonViewProps) {
                   e.stopPropagation();
                   speakWord(token.text);
                 }}
-                className={`cursor-pointer rounded px-1 transition-all duration-150 select-all active:scale-95 border-b-2 ${
-                  isHighlighted
-                    ? 'bg-yellow-200 text-[#5B3E1B] font-extrabold scale-110 shadow-sm border-yellow-400'
-                    : 'text-charcoal hover:text-coral hover:bg-yellow-accent/40 border-transparent hover:border-coral/30'
-                }`}
+                className={`cursor-pointer rounded px-1 transition-all duration-150 select-all active:scale-95 border-b-2 ${highlightStyle}`}
                 title="اضغط لسماع نطق الكلمة بالصوت 🔊"
               >
                 {token.text}
@@ -228,6 +325,10 @@ export default function LessonView({ lesson }: LessonViewProps) {
           const absEnd = startOffset + token.end;
           const isHighlighted = activeCharIndex >= absStart && activeCharIndex < absEnd;
 
+          const highlightStyle = isHighlighted
+            ? getHighlightedClass(readingMode)
+            : `${getTextColor(readingMode)} ${getHoverBg(readingMode)} border-transparent`;
+
           return (
             <span key={idx} className="inline-block">
               <span
@@ -235,11 +336,7 @@ export default function LessonView({ lesson }: LessonViewProps) {
                   e.stopPropagation();
                   speakWord(token.text);
                 }}
-                className={`cursor-pointer rounded px-1 transition-all duration-150 select-all active:scale-95 border-b-2 ${
-                  isHighlighted
-                    ? 'bg-yellow-200 text-[#5B3E1B] font-extrabold scale-110 shadow-sm border-yellow-400'
-                    : 'text-charcoal hover:text-coral hover:bg-yellow-accent/40 border-transparent hover:border-coral/30'
-                }`}
+                className={`cursor-pointer rounded px-1 transition-all duration-150 select-all active:scale-95 border-b-2 ${highlightStyle}`}
                 title="اضغط لسماع نطق الكلمة بالصوت 🔊"
               >
                 {token.text}
@@ -330,28 +427,252 @@ export default function LessonView({ lesson }: LessonViewProps) {
       />
 
       {/* Lesson Body Sheet (Simulating an editable Interactive PDF book leaf) */}
-      <div className="bg-white rounded-[40px] p-6 md:p-10 shadow-lg border-2 border-yellow-border relative">
+      <div className={`rounded-[40px] p-6 md:p-10 shadow-lg border-2 transition-all duration-300 relative ${
+        readingMode === 'standard'
+          ? 'bg-white border-yellow-border text-charcoal'
+          : readingMode === 'warm'
+          ? 'bg-[#FDF6E2] border-amber-300'
+          : 'bg-[#2D231D] border-[#4A3D33]'
+      }`}>
         {/* PDF notebook margins and hole punches */}
-        <div className="absolute top-0 bottom-0 left-4 w-0.5 bg-rose-200 hidden md:block"></div>
-        <div className="absolute top-0 bottom-0 left-6 w-0.5 bg-rose-200 hidden md:block"></div>
+        <div className={`absolute top-0 bottom-0 left-4 w-0.5 hidden md:block transition-colors duration-300 ${
+          readingMode === 'standard' ? 'bg-rose-200' : readingMode === 'warm' ? 'bg-amber-200/50' : 'bg-[#4A3D33]'
+        }`}></div>
+        <div className={`absolute top-0 bottom-0 left-6 w-0.5 hidden md:block transition-colors duration-300 ${
+          readingMode === 'standard' ? 'bg-rose-200' : readingMode === 'warm' ? 'bg-amber-200/50' : 'bg-[#4A3D33]'
+        }`}></div>
         
         {/* Punch holes in the book */}
-        <div className="absolute top-1/4 left-1 w-4 h-4 bg-cream rounded-full border border-yellow-border/50 hidden md:block"></div>
-        <div className="absolute top-1/2 left-1 w-4 h-4 bg-cream rounded-full border border-yellow-border/50 hidden md:block"></div>
-        <div className="absolute top-3/4 left-1 w-4 h-4 bg-cream rounded-full border border-yellow-border/50 hidden md:block"></div>
+        <div className={`absolute top-1/4 left-1 w-4 h-4 rounded-full border hidden md:block transition-colors duration-300 ${
+          readingMode === 'standard' ? 'bg-cream border-yellow-border/50' : readingMode === 'warm' ? 'bg-[#FAF4E2] border-amber-300/50' : 'bg-[#1E1E1E] border-[#4A3D33]'
+        }`}></div>
+        <div className={`absolute top-1/2 left-1 w-4 h-4 rounded-full border hidden md:block transition-colors duration-300 ${
+          readingMode === 'standard' ? 'bg-cream border-yellow-border/50' : readingMode === 'warm' ? 'bg-[#FAF4E2] border-amber-300/50' : 'bg-[#1E1E1E] border-[#4A3D33]'
+        }`}></div>
+        <div className={`absolute top-3/4 left-1 w-4 h-4 rounded-full border hidden md:block transition-colors duration-300 ${
+          readingMode === 'standard' ? 'bg-cream border-yellow-border/50' : readingMode === 'warm' ? 'bg-[#FAF4E2] border-amber-300/50' : 'bg-[#1E1E1E] border-[#4A3D33]'
+        }`}></div>
+
+        {/* Reading Settings Toolbar */}
+        <div className={`mb-6 pb-6 border-b-2 border-dashed flex flex-col lg:flex-row items-center justify-between gap-4 select-none relative z-10 transition-colors duration-300 ${
+          readingMode === 'standard' 
+            ? 'border-yellow-border/30 text-charcoal' 
+            : readingMode === 'warm' 
+            ? 'border-amber-300/30 text-[#4E3620]' 
+            : 'border-[#4A3D33]/40 text-[#F4ECE1]'
+        }`}>
+          <div className="flex items-center gap-3 w-full lg:w-auto justify-start">
+            <span className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors duration-300 ${
+              readingMode === 'standard' ? 'bg-coral/10 text-coral' : readingMode === 'warm' ? 'bg-amber-100 text-amber-700' : 'bg-amber-900/40 text-yellow-accent'
+            }`}>
+              📖
+            </span>
+            <div className="text-right">
+              <h4 className={`text-sm font-black transition-colors duration-300 ${
+                readingMode === 'standard' ? 'text-charcoal' : readingMode === 'warm' ? 'text-[#4E3620]' : 'text-[#F4ECE1]'
+              }`}>إعدادات القراءة والمظهر</h4>
+              <p className={`text-[10px] font-bold transition-colors duration-300 ${
+                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+              }`}>تحكم في وضع المظهر وسُمك وحجم وعرض الخطوط لراحة عينيك</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
+            {/* Theme / Reading Mode Selector */}
+            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+              readingMode === 'standard' 
+                ? 'bg-cream/70 border-yellow-border/50' 
+                : readingMode === 'warm' 
+                ? 'bg-[#FAF1DC] border-amber-300/50' 
+                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+            }`}>
+              <button
+                onClick={() => setReadingMode('standard')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  readingMode === 'standard'
+                    ? 'bg-white text-charcoal shadow-sm border border-yellow-border/50'
+                    : 'text-slate-600 hover:text-charcoal'
+                }`}
+                title="الوضع الافتراضي الأبيض"
+              >
+                ☀️ عادي
+              </button>
+              <button
+                onClick={() => setReadingMode('warm')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  readingMode === 'warm'
+                    ? 'bg-[#FFF9E6] text-[#4E3620] shadow-sm border border-amber-300/60'
+                    : readingMode === 'standard' ? 'text-slate-600 hover:text-charcoal' : 'text-[#9C8F84] hover:text-[#F4ECE1]'
+                }`}
+                title="الوضع الدافئ المريح جداً للعين"
+              >
+                🌾 دافئ
+              </button>
+              <button
+                onClick={() => setReadingMode('soft-dark')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  readingMode === 'soft-dark'
+                    ? 'bg-[#2D231D] text-[#F4ECE1] shadow-sm border border-[#4A3D33]'
+                    : readingMode === 'standard' ? 'text-slate-600 hover:text-charcoal' : 'text-[#826E5D]'
+                }`}
+                title="الوضع الهادئ لقرائة ليلية مريحة"
+              >
+                🌙 هادئ
+              </button>
+            </div>
+
+            {/* Font Size Selector */}
+            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+              readingMode === 'standard' 
+                ? 'bg-cream/70 border-yellow-border/50' 
+                : readingMode === 'warm' 
+                ? 'bg-[#FAF1DC] border-amber-300/50' 
+                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+            }`}>
+              <span className={`text-[10px] font-black px-1 ${
+                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+              }`}>الحجم:</span>
+              <button
+                onClick={() => setFontSize('sm')}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-black transition-all cursor-pointer ${
+                  fontSize === 'sm' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                }`}
+                title="خط صغير"
+              >
+                أ
+              </button>
+              <button
+                onClick={() => setFontSize('md')}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[14px] font-black transition-all cursor-pointer ${
+                  fontSize === 'md' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                }`}
+                title="خط متوسط"
+              >
+                أ
+              </button>
+              <button
+                onClick={() => setFontSize('lg')}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[18px] font-black transition-all cursor-pointer ${
+                  fontSize === 'lg' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                }`}
+                title="خط كبير"
+              >
+                أ
+              </button>
+              <button
+                onClick={() => setFontSize('xl')}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[22px] font-black transition-all cursor-pointer ${
+                  fontSize === 'xl' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                }`}
+                title="خط ضخم جداً"
+              >
+                أ+
+              </button>
+            </div>
+
+            {/* Font Weight Selector (سُمك الخط) */}
+            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+              readingMode === 'standard' 
+                ? 'bg-cream/70 border-yellow-border/50' 
+                : readingMode === 'warm' 
+                ? 'bg-[#FAF1DC] border-amber-300/50' 
+                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+            }`}>
+              <span className={`text-[10px] font-black px-1 ${
+                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+              }`}>السُّمك:</span>
+              <button
+                onClick={() => setFontWeight('normal')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                  fontWeight === 'normal' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                }`}
+              >
+                عادي
+              </button>
+              <button
+                onClick={() => setFontWeight('bold')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                  fontWeight === 'bold' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                }`}
+              >
+                عريض
+              </button>
+              <button
+                onClick={() => setFontWeight('black')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                  fontWeight === 'black' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                }`}
+              >
+                عريض جداً
+              </button>
+            </div>
+
+            {/* Column Width / Text Width Control (عرض النص) */}
+            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+              readingMode === 'standard' 
+                ? 'bg-cream/70 border-yellow-border/50' 
+                : readingMode === 'warm' 
+                ? 'bg-[#FAF1DC] border-amber-300/50' 
+                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+            }`}>
+              <span className={`text-[10px] font-black px-1 ${
+                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+              }`}>عرض النص:</span>
+              <button
+                onClick={() => setTextWidth('narrow')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                  textWidth === 'narrow' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                }`}
+                title="عرض النص ضيق ومريح للتركيز"
+              >
+                ضيق
+              </button>
+              <button
+                onClick={() => setTextWidth('medium')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                  textWidth === 'medium' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                }`}
+                title="عرض النص متوسط"
+              >
+                متوسط
+              </button>
+              <button
+                onClick={() => setTextWidth('wide')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                  textWidth === 'wide' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                }`}
+                title="عرض النص كامل"
+              >
+                كامل
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Beautiful Lesson Illustration (Child-appealing, with a Polaroid/Frame effect) */}
         {(LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId]) && (
           <div className="mb-8 md:pr-10 flex flex-col items-center">
-            <div className="w-full max-w-2xl bg-[#FFFBF0] p-4 rounded-3xl border-2 border-yellow-border shadow-md transform hover:rotate-1 hover:scale-[1.01] transition-all duration-300 relative">
+            <div className={`w-full max-w-2xl p-4 rounded-3xl border-2 shadow-md transform hover:rotate-1 hover:scale-[1.01] transition-all duration-300 relative ${
+              readingMode === 'standard' 
+                ? 'bg-[#FFFBF0] border-yellow-border' 
+                : readingMode === 'warm' 
+                ? 'bg-[#F2E8CD] border-amber-300' 
+                : 'bg-[#221A15] border-[#4A3D33]'
+            }`}>
               
               {/* Creative Sticker Stamp (Lesson-specific) */}
               {LESSON_DETAILS[lesson.id] && (
-                <div className="absolute -top-4 -right-4 bg-white border-2 border-yellow-border shadow-lg rounded-full px-3.5 py-1.5 z-20 flex items-center gap-2 transform rotate-3 select-none">
+                <div className={`absolute -top-4 -right-4 border-2 shadow-lg rounded-full px-3.5 py-1.5 z-20 flex items-center gap-2 transform rotate-3 select-none transition-colors duration-300 ${
+                  readingMode === 'standard' 
+                    ? 'bg-white border-yellow-border text-slate-800' 
+                    : readingMode === 'warm' 
+                    ? 'bg-[#FCF5E3] border-amber-300 text-[#4E3620]' 
+                    : 'bg-[#1E1E1E] border-[#4A3D33] text-[#F4ECE1]'
+                }`}>
                   <span className="text-2xl">{LESSON_DETAILS[lesson.id].sticker}</span>
                   <div className="text-right">
                     <p className="text-[9px] font-black text-coral leading-none">طابع ترفيهي 🌟</p>
-                    <p className="text-[11px] font-black text-slate-800 leading-tight mt-0.5">{LESSON_DETAILS[lesson.id].label}</p>
+                    <p className="text-[11px] font-black leading-tight mt-0.5">{LESSON_DETAILS[lesson.id].label}</p>
                   </div>
                 </div>
               )}
@@ -383,15 +704,23 @@ export default function LessonView({ lesson }: LessonViewProps) {
 
               {/* Lesson Specific Description */}
               {LESSON_DETAILS[lesson.id] && (
-                <div className="mt-4 p-3 bg-white rounded-2xl border border-yellow-border/30 text-right">
-                  <p className="font-extrabold text-xs md:text-sm text-slate-800 flex flex-row-reverse items-center gap-2 justify-start leading-relaxed">
+                <div className={`mt-4 p-3 rounded-2xl border transition-colors duration-300 text-right ${
+                  readingMode === 'standard' 
+                    ? 'bg-white border-yellow-border/30 text-slate-800' 
+                    : readingMode === 'warm' 
+                    ? 'bg-[#FCF5E3] border-amber-300/40 text-[#4E3620]' 
+                    : 'bg-[#1E1E1E] border-[#4A3D33]/40 text-[#D5C7B7]'
+                }`}>
+                  <p className="font-extrabold text-xs md:text-sm flex flex-row-reverse items-center gap-2 justify-start leading-relaxed">
                     <span className="text-coral shrink-0">🎯 فكرة الدرس اليوم:</span>
                     <span>{LESSON_DETAILS[lesson.id].desc}</span>
                   </p>
                 </div>
               )}
 
-              <p className="text-center font-bold text-[11px] md:text-xs mt-3 text-slate-600">
+              <p className={`text-center font-bold text-[11px] md:text-xs mt-3 ${
+                readingMode === 'standard' ? 'text-slate-600' : readingMode === 'warm' ? 'text-[#6E553F]' : 'text-[#B2A394]'
+              }`}>
                 🖼️ رسمة توضيحية لدرس: <span className="text-coral underline font-black">{lesson.title}</span>
               </p>
             </div>
@@ -401,14 +730,14 @@ export default function LessonView({ lesson }: LessonViewProps) {
         {/* Content Renderers */}
         {lesson.type === LessonType.Poem && lesson.stanzas ? (
           /* Poetry Layout - classical Arabic bicolumn display */
-          <div className="flex flex-col gap-6 md:gap-8 max-w-2xl mx-auto py-4 select-text">
+          <div className={`flex flex-col gap-6 md:gap-8 mx-auto py-4 select-text transition-all duration-300 ${textWidthClass}`}>
             {stanzasWithOffsets.map((stanza, index) => (
               <div 
                 key={stanza.id}
-                className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 items-center text-center group transition-all duration-200 hover:bg-cream/40 p-2.5 rounded-2xl border border-transparent hover:border-yellow-border/60"
+                className={`grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 items-center text-center group transition-all duration-200 p-2.5 rounded-2xl border border-transparent ${getStanzaHoverBg(readingMode)}`}
               >
                 {/* Right side (الصدر) */}
-                <div className="font-extrabold text-lg md:text-xl text-charcoal font-serif leading-relaxed md:text-left md:pl-2">
+                <div className={`font-serif leading-relaxed md:text-left md:pl-2 ${fontSizeClass} ${fontWeightClass} ${getTextColor(readingMode)}`}>
                   {renderHemistichTokens(stanza.text1, stanza.startOffset)}
                 </div>
 
@@ -418,7 +747,7 @@ export default function LessonView({ lesson }: LessonViewProps) {
                 </div>
 
                 {/* Left side (العجز) */}
-                <div className="font-extrabold text-lg md:text-xl text-charcoal font-serif leading-relaxed md:text-right md:pr-2">
+                <div className={`font-serif leading-relaxed md:text-right md:pr-2 ${fontSizeClass} ${fontWeightClass} ${getTextColor(readingMode)}`}>
                   {renderHemistichTokens(stanza.text2, stanza.startOffset + stanza.text2RelOffset)}
                 </div>
               </div>
@@ -426,23 +755,33 @@ export default function LessonView({ lesson }: LessonViewProps) {
           </div>
         ) : (
           /* Normal Lesson Text Layout */
-          <div className="md:pr-10 select-text">
-            <div className="absolute top-8 right-8 text-yellow-accent opacity-20 pointer-events-none">
+          <div className={`md:pr-10 select-text mx-auto transition-all duration-300 ${textWidthClass}`}>
+            <div className={`absolute top-8 right-8 opacity-10 pointer-events-none ${
+              readingMode === 'soft-dark' ? 'text-white' : 'text-yellow-accent'
+            }`}>
               <Quote className="w-16 h-16 transform scale-x-[-1]" />
             </div>
 
-            <div className="font-serif font-bold text-lg md:text-xl text-charcoal leading-loose text-justify whitespace-pre-line">
+            <div className={`font-serif leading-loose text-justify whitespace-pre-line ${fontSizeClass} ${fontWeightClass} ${getTextColor(readingMode)}`}>
               {renderInteractiveText(lesson.content)}
             </div>
           </div>
         )}
 
         {/* Playful cartoon note at the bottom */}
-        <div className="mt-8 border-t-2 border-dashed border-yellow-border/40 pt-6 flex items-start gap-3 bg-cream/50 p-4 rounded-2xl border border-yellow-border/30">
+        <div className={`mt-8 border-t-2 border-dashed pt-6 flex items-start gap-3 p-4 rounded-2xl border transition-colors duration-300 ${
+          readingMode === 'standard' 
+            ? 'border-yellow-border/40 bg-cream/50 border-yellow-border/30' 
+            : readingMode === 'warm' 
+            ? 'border-amber-300/40 bg-[#FAF1DC]/60 border-amber-300/30 text-[#4E3620]' 
+            : 'border-[#4A3D33]/40 bg-[#1E1E1E]/50 border-[#4A3D33]/30 text-[#D5C7B7]'
+        }`}>
           <span className="text-3xl">💡</span>
           <div className="text-right">
             <p className="font-bold text-coral text-xs md:text-sm">نصيحة المعلم الصغير 🧑‍🏫:</p>
-            <p className="text-xs text-slate-600 mt-1 font-extrabold">
+            <p className={`text-xs mt-1 font-extrabold ${
+              readingMode === 'standard' ? 'text-slate-600' : readingMode === 'warm' ? 'text-[#6E553F]' : 'text-[#B2A394]'
+            }`}>
               ✨ ميزة جديدة رائعة: اضغط على أي كلمة في الدرس أو النشيد لسماع نطقها الصحيح بالصوت! 🔊
             </p>
           </div>
