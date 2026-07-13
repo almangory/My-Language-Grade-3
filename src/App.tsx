@@ -12,8 +12,10 @@ import SmartSearchBot from './components/SmartSearchBot';
 import { playSound } from './utils';
 import { BookOpen, Award, ArrowRight, Star, Wifi, WifiOff, Download, CheckCircle, RefreshCw } from 'lucide-react';
 
+import appLogo from './assets/images/pwa_icon_1783959148370.jpg';
+
 // يمكن تغيير مسار الشعار بسهولة من هنا:
-export const APP_LOGO_PATH = '/pwa_icon.png';
+export const APP_LOGO_PATH = appLogo;
 
 const ALL_RESOURCES = [
   '/',

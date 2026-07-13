@@ -129,6 +129,7 @@ export default function LessonView({ lesson }: LessonViewProps) {
   const [activeCharIndex, setActiveCharIndex] = React.useState<number>(-1);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [showAudioPlayer, setShowAudioPlayer] = useState<boolean>(false);
+  const [showGrammarCard, setShowGrammarCard] = useState<boolean>(false);
 
   // Reading Mode States (with LocalStorage persistence)
   const [readingMode, setReadingMode] = useState<'standard' | 'warm' | 'soft-dark'>(() => {
@@ -780,15 +781,6 @@ export default function LessonView({ lesson }: LessonViewProps) {
         </div>
       </div>
 
-      {/* Grammar Rule Section (قسم القواعد الإملائية واللغوية) */}
-      {lesson.grammarRule && (
-        <GrammarCard
-          grammarRule={lesson.grammarRule}
-          readingMode={readingMode}
-          speakWord={speakWord}
-        />
-      )}
-
       {/* Fullscreen Image Overlay */}
       <AnimatePresence>
         {fullScreenImage && (
@@ -896,6 +888,61 @@ export default function LessonView({ lesson }: LessonViewProps) {
         <Volume2 className={`w-6 h-6 ${showAudioPlayer ? 'rotate-12' : 'animate-pulse'}`} />
         <span className="text-sm font-black hidden sm:inline-block tracking-tight">الْقَارِئُ الْآلِيُّ 🤖🔊</span>
       </motion.button>
+
+      {/* Floating Grammar Card Box (صندوق القواعد العائم) */}
+      <AnimatePresence>
+        {showGrammarCard && lesson.grammarRule && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" dir="rtl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 280 }}
+              className="relative max-w-2xl w-full max-h-[85vh] overflow-y-auto bg-white rounded-[32px] border-4 border-amber-400 shadow-2xl p-2"
+            >
+              {/* Close Button on top of the card */}
+              <button
+                onClick={() => {
+                  setShowGrammarCard(false);
+                  try { playSound('click'); } catch(e){}
+                }}
+                className="absolute top-5 left-5 z-20 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-all cursor-pointer shadow-md active:scale-95"
+                title="إغلاق ❌"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <GrammarCard
+                grammarRule={lesson.grammarRule}
+                readingMode={readingMode}
+                speakWord={speakWord}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Grammar Rules Trigger Button */}
+      {lesson.grammarRule && (
+        <motion.button
+          onClick={() => {
+            setShowGrammarCard(!showGrammarCard);
+            try { playSound('click'); } catch(e){}
+          }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className={`fixed bottom-40 right-6 md:right-12 z-50 flex items-center justify-center gap-2.5 px-5 py-4 rounded-full shadow-2xl transition-all duration-300 border-3 border-white ${
+            showGrammarCard
+              ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/30'
+              : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white animate-bounce shadow-amber-500/30'
+          }`}
+          style={{ animationDuration: '4s' }}
+          title="مِصْبَاحُ الْقَوَاعِدِ الْإِمْلَائِيَّةِ 💡"
+        >
+          <span className="text-xl">💡</span>
+          <span className="text-sm font-black hidden sm:inline-block tracking-tight">مِصْبَاحُ الْقَوَاعِدِ 💡</span>
+        </motion.button>
+      )}
     </div>
   );
 }
