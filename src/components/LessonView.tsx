@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Lesson, LessonType, GrammarRule } from '../types';
-import { Music, Star, BookOpen, Quote, Maximize2, Volume2, X } from 'lucide-react';
+import { Music, Star, BookOpen, Quote, Maximize2, Minimize2, Volume2, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import GrammarCard from './GrammarCard';
 import { playSound } from '../utils';
@@ -383,6 +383,7 @@ export default function LessonView({
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [showAudioPlayer, setShowAudioPlayer] = useState<boolean>(false);
   const [localShowGrammarCard, setLocalShowGrammarCard] = useState<boolean>(false);
+  const [isLessonFullscreen, setIsLessonFullscreen] = useState<boolean>(false);
 
   const showGrammarCard = externalShowGrammarCard !== undefined ? externalShowGrammarCard : localShowGrammarCard;
   const setShowGrammarCard = externalSetShowGrammarCard !== undefined ? externalSetShowGrammarCard : setLocalShowGrammarCard;
@@ -678,7 +679,11 @@ export default function LessonView({
       </div>
 
       {/* Lesson Body Sheet (Simulating an editable Interactive PDF book leaf) */}
-      <div className={`rounded-[40px] p-6 md:p-10 shadow-lg border-2 transition-all duration-300 relative ${
+      <div className={`transition-all duration-300 relative ${
+        isLessonFullscreen
+          ? 'fixed inset-0 z-[100] overflow-y-auto p-6 md:p-12 rounded-none border-none shadow-none'
+          : 'rounded-[40px] p-6 md:p-10 shadow-lg border-2'
+      } ${
         readingMode === 'standard'
           ? 'bg-white border-yellow-border text-charcoal'
           : readingMode === 'warm'
@@ -686,21 +691,21 @@ export default function LessonView({
           : 'bg-[#2D231D] border-[#4A3D33]'
       }`}>
         {/* PDF notebook margins and hole punches */}
-        <div className={`absolute top-0 bottom-0 left-4 w-0.5 hidden md:block transition-colors duration-300 ${
+        <div className={`absolute top-0 bottom-0 left-4 w-0.5 ${isLessonFullscreen ? 'hidden' : 'hidden md:block'} transition-colors duration-300 ${
           readingMode === 'standard' ? 'bg-rose-200' : readingMode === 'warm' ? 'bg-amber-200/50' : 'bg-[#4A3D33]'
         }`}></div>
-        <div className={`absolute top-0 bottom-0 left-6 w-0.5 hidden md:block transition-colors duration-300 ${
+        <div className={`absolute top-0 bottom-0 left-6 w-0.5 ${isLessonFullscreen ? 'hidden' : 'hidden md:block'} transition-colors duration-300 ${
           readingMode === 'standard' ? 'bg-rose-200' : readingMode === 'warm' ? 'bg-amber-200/50' : 'bg-[#4A3D33]'
         }`}></div>
         
         {/* Punch holes in the book */}
-        <div className={`absolute top-1/4 left-1 w-4 h-4 rounded-full border hidden md:block transition-colors duration-300 ${
+        <div className={`absolute top-1/4 left-1 w-4 h-4 rounded-full border ${isLessonFullscreen ? 'hidden' : 'hidden md:block'} transition-colors duration-300 ${
           readingMode === 'standard' ? 'bg-cream border-yellow-border/50' : readingMode === 'warm' ? 'bg-[#FAF4E2] border-amber-300/50' : 'bg-[#1E1E1E] border-[#4A3D33]'
         }`}></div>
-        <div className={`absolute top-1/2 left-1 w-4 h-4 rounded-full border hidden md:block transition-colors duration-300 ${
+        <div className={`absolute top-1/2 left-1 w-4 h-4 rounded-full border ${isLessonFullscreen ? 'hidden' : 'hidden md:block'} transition-colors duration-300 ${
           readingMode === 'standard' ? 'bg-cream border-yellow-border/50' : readingMode === 'warm' ? 'bg-[#FAF4E2] border-amber-300/50' : 'bg-[#1E1E1E] border-[#4A3D33]'
         }`}></div>
-        <div className={`absolute top-3/4 left-1 w-4 h-4 rounded-full border hidden md:block transition-colors duration-300 ${
+        <div className={`absolute top-3/4 left-1 w-4 h-4 rounded-full border ${isLessonFullscreen ? 'hidden' : 'hidden md:block'} transition-colors duration-300 ${
           readingMode === 'standard' ? 'bg-cream border-yellow-border/50' : readingMode === 'warm' ? 'bg-[#FAF4E2] border-amber-300/50' : 'bg-[#1E1E1E] border-[#4A3D33]'
         }`}></div>
 
@@ -897,8 +902,45 @@ export default function LessonView({
                 كامل
               </button>
             </div>
+
+            {/* Fullscreen Toggle */}
+            <button
+              onClick={() => {
+                setIsLessonFullscreen(!isLessonFullscreen);
+                try { playSound('click'); } catch(e){}
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black shadow-sm border transition-all hover:scale-105 active:scale-95 cursor-pointer bg-amber-400 hover:bg-amber-500 text-slate-900 border-white"
+              title={isLessonFullscreen ? "تصغير الشاشة 🗗" : "ملء الشاشة 📺"}
+            >
+              {isLessonFullscreen ? (
+                <>
+                  <Minimize2 className="w-3.5 h-3.5" />
+                  <span>الخروج من ملء الشاشة</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>ملء الشاشة 📺</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Floating exit fullscreen button for convenience */}
+        {isLessonFullscreen && (
+          <button
+            onClick={() => {
+              setIsLessonFullscreen(false);
+              try { playSound('click'); } catch(e){}
+            }}
+            className="fixed top-4 left-4 z-[110] bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-full shadow-2xl border-2 border-white transition-all hover:scale-110 active:scale-90 cursor-pointer flex items-center gap-2"
+            title="الخروج من ملء الشاشة ❌"
+          >
+            <Minimize2 className="w-4 h-4" />
+            <span className="text-xs font-black">إغلاق ملء الشاشة</span>
+          </button>
+        )}
 
         {/* Beautiful Lesson Illustration (Child-appealing, with a Polaroid/Frame effect) */}
         {(LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId]) && (
