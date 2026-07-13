@@ -1,9 +1,10 @@
-const CACHE_NAME = 'lughaty-v4';
+const CACHE_NAME = 'lughaty-v5';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/pwa_icon.svg'
+  '/pwa_icon.svg',
+  '/pwa_icon.png'
 ];
 
 self.addEventListener('install', (event) => {

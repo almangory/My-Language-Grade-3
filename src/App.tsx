@@ -103,7 +103,7 @@ export default function App() {
     if ('caches' in window) {
       caches.keys().then((keys) => {
         keys.forEach((key) => {
-          if (key !== 'lughaty-v4') {
+          if (key !== 'lughaty-v5') {
             caches.delete(key).then(() => {
               console.log('Cleared stale cache:', key);
             });
