@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Unit, Lesson, LessonType } from '../types';
 import { Heart, School, Sparkles, BookOpen, Music, CheckCircle, ChevronLeft } from 'lucide-react';
 import { playSound } from '../utils';
+import { motion } from 'motion/react';
 
 interface KidDashboardProps {
   units: Unit[];
@@ -53,9 +54,12 @@ export default function KidDashboard({ units, completedLessons, totalScore, onSe
             const theme = getUnitTheme(unit.id, idx);
 
             return (
-              <div
+              <motion.div
                 key={unit.id}
-                className="flex flex-col transition-all duration-200"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: idx * 0.08 }}
+                className="flex flex-col"
               >
                 {/* Unit Map Card */}
                 <button
@@ -65,7 +69,7 @@ export default function KidDashboard({ units, completedLessons, totalScore, onSe
                     setActiveUnitId(isSelected ? null : unit.id);
                     playSound('click');
                   }}
-                  className={`w-full text-right p-6 rounded-[32px] bg-white text-charcoal border-2 ${theme.border} ${theme.shadowAccent} shadow-sm hover:scale-[1.01] transform active:scale-95 transition-all duration-150 cursor-pointer flex flex-col gap-3 relative ${
+                  className={`w-full text-right p-6 rounded-[32px] bg-white text-charcoal border-2 ${theme.border} ${theme.shadowAccent} shadow-md hover:shadow-xl hover:-translate-y-1.5 transform active:scale-95 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative ${
                     isSelected ? 'ring-4 ring-coral/30 ring-offset-2 border-coral' : ''
                   }`}
                 >
@@ -98,24 +102,32 @@ export default function KidDashboard({ units, completedLessons, totalScore, onSe
 
                 {/* CONDITION-RENDER: LESSONS SHELF */}
                 {isSelected && (
-                  <div className="flex flex-col gap-2 mt-4 bg-white p-4 rounded-[24px] border-2 border-dashed border-yellow-border transition-all duration-200 shadow-inner">
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col gap-2 mt-4 bg-white p-4 rounded-[24px] border-2 border-dashed border-yellow-border shadow-inner overflow-hidden"
+                  >
                     <p className="text-xs font-bold text-slate-500 mb-2">اختر درساً للبدء بقراءته وحل تمارينه:</p>
                     
-                    {unit.lessons.map(lesson => {
+                    {unit.lessons.map((lesson, lessonIdx) => {
                       const isCompleted = completedLessons.includes(lesson.id);
                       return (
-                        <button
+                        <motion.button
                           key={lesson.id}
                           type="button"
                           id={`lesson-item-btn-${lesson.id}`}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: lessonIdx * 0.05 }}
                           onClick={() => {
                             onSelectLesson(lesson);
                             playSound('click');
                           }}
-                          className={`w-full text-right p-3.5 rounded-2xl border-2 flex items-center justify-between gap-3 transition-all duration-150 transform hover:translate-x-[-4px] cursor-pointer ${
+                          className={`w-full text-right p-3.5 rounded-2xl border-2 flex items-center justify-between gap-3 transition-all duration-300 transform hover:-translate-x-1.5 hover:shadow-md hover:border-yellow-border cursor-pointer ${
                             isCompleted
-                              ? 'bg-[#F0FFF4] border-[#B7E4C7] text-[#2D6A4F]'
-                              : 'bg-slate-50 hover:bg-[#FFF9E6]/40 border-slate-100 hover:border-yellow-border text-slate-800 shadow-sm'
+                              ? 'bg-[#F0FFF4] border-[#B7E4C7] text-[#2D6A4F] shadow-sm hover:shadow-emerald-100/60'
+                              : 'bg-slate-50 hover:bg-[#FFF9E6]/40 border-slate-100 text-slate-800 shadow-sm hover:shadow-amber-100/40'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -148,16 +160,16 @@ export default function KidDashboard({ units, completedLessons, totalScore, onSe
                               <ChevronLeft className="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600" />
                             )}
                           </div>
-                        </button>
+                        </motion.button>
                       );
                     })}
 
                     {unit.lessons.length === 0 && (
                       <p className="text-xs text-slate-400 py-4 text-center">لا توجد دروس مضافة في هذه الوحدة حتى الآن.</p>
                     )}
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>

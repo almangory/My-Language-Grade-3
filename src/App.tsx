@@ -695,7 +695,7 @@ export default function App() {
                   )}
 
                   {/* Middle Grammar Bulb Button */}
-                  {selectedLesson.grammarRule ? (
+                  {selectedLesson ? (
                     <button
                       onClick={() => {
                         setShowGrammarCard(!showGrammarCard);

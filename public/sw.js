@@ -86,29 +86,57 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || (networkResponse.type !== 'basic' && networkResponse.type !== 'cors')) {
-          return networkResponse;
+  const url = new URL(event.request.url);
+  const isStaticAsset = 
+    url.pathname.includes('/assets/') || 
+    /\.(png|jpg|jpeg|gif|svg|webp|ico|woff2?|mp3|wav)$/i.test(url.pathname);
+
+  if (isStaticAsset) {
+    // Cache-First strategy for static assets (Images, Audios, Fonts)
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          // Return instantly from cache for a seamless offline experience
+          return cachedResponse;
         }
-        // Update cache on successful network fetch
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return networkResponse;
-      })
-      .catch(() => {
-        // Fallback to cache if network is unavailable/offline
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+        
+        return fetch(event.request).then((networkResponse) => {
+          if (networkResponse && (networkResponse.status === 200 || networkResponse.status === 0)) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
+          return networkResponse;
+        }).catch(() => {
+          // Fail gracefully if completely offline and not in cache
         });
       })
-  );
+    );
+  } else {
+    // Network-First with Cache Fallback for other resources (HTML, JS, configurations)
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Network failed (offline) -> fallback to cache
+          return caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            if (event.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
+          });
+        })
+    );
+  }
 });

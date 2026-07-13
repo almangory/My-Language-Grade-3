@@ -1,10 +1,231 @@
 import React, { useState } from 'react';
-import { Lesson, LessonType } from '../types';
+import { createPortal } from 'react-dom';
+import { Lesson, LessonType, GrammarRule } from '../types';
 import { Music, Star, BookOpen, Quote, Maximize2, Volume2, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import GrammarCard from './GrammarCard';
 import { playSound } from '../utils';
 import { motion, AnimatePresence } from 'motion/react';
+
+const FALLBACK_GRAMMAR_RULES: Record<string, GrammarRule> = {
+  'u1-l2': {
+    title: "قاعدة المد بالألف والواو والياء",
+    ruleText: "المد هو إطالة الصوت بحرف من حروف المد الثلاثة: الألف والواو والياء.",
+    explanation: "يأتي حرف المد ساكناً وما قبله حركة تجانسه (الفتحة قبل الألف، الضمة قبل الواو، الكسرة قبل الياء).",
+    examples: [
+      { word: "أبِي", explanation: "مد بالياء، الحرف الممدود هو الباء المكسورة (بِ)." },
+      { word: "دَوْمَاً", explanation: "تنوين بالفتح يكتب فوق الحرف مع ألف زائدة." },
+      { word: "يَا", explanation: "مد بالألف، الحرف الممدود هو الياء المفتوحة (يَ)." }
+    ]
+  },
+  'u1-l3': {
+    title: "قاعدة ال التعريف (اللام الشمسية واللام القمرية)",
+    ruleText: "اللام القمرية تُكتب وتُنطق، بينما اللام الشمسية تُكتب ولا تُنطق ويُشدد الحرف بعدها.",
+    explanation: "حروف اللام القمرية مجموعة في جملة (ابغ حجك وخف عقيمه). باقي الحروف تكون شمسية.",
+    examples: [
+      { word: "الْجَار", explanation: "لام قمرية تُنطق بوضوح لوجود حرف الجيم بعدها." },
+      { word: "الضَّيْف", explanation: "لام شمسية لا تُنطق، والحرف بعدها (الضاد) مشدد." }
+    ]
+  },
+  'u1-l4': {
+    title: "قاعدة التنوين (الضم، الفتح، الكسر)",
+    ruleText: "التنوين هو نون ساكنة زائدة تلحق آخر الاسم نطقاً لا كتابة.",
+    explanation: "يأتي التنوين على ثلاثة أشكال: تنوين ضم (ــٌ)، تنوين فتح (ــً)، تنوين كسر (ــٍ).",
+    examples: [
+      { word: "عَيْشٌ", explanation: "تنوين بالضم يوضع فوق الحرف الأخير." },
+      { word: "شَرِيفاً", explanation: "تنوين بالفتح تلحق به ألف التنوين الزائدة." },
+      { word: "بِصِدْقٍ", explanation: "تنوين بالكسر يوضع تحت الحرف الأخير." }
+    ]
+  },
+  'u1-l5': {
+    title: "الفرق بين التاء المربوطة والتاء المفتوحة والهاء",
+    ruleText: "التاء المربوطة (ة) تنطق هاءً عند الوقف وتاءً عند الوصل، أما المفتوحة (ت) فتنطق تاءً في الحالتين.",
+    explanation: "الهاء (هـ) تنطق هاءً عند الوقف وعند الوصل (مثل: كتابُه).",
+    examples: [
+      { word: "أَمَانَةٌ", explanation: "تاء مربوطة؛ تنطق تاء عند الوصل (أمانةُ المرء) وهاء عند الوقف (أمانه)." },
+      { word: "بَيْت", explanation: "تاء مفتوحة؛ تنطق تاء عند الوقف والوصل." },
+      { word: "مَعَه", explanation: "هاء؛ تنطق هاء في الوقف والوصل." }
+    ]
+  },
+  'u2-l1': {
+    title: "الفرق بين همزة الوصل وهمزة القطع",
+    ruleText: "همزة القطع (أ، إ) تُكتب وتُنطق دائماً، وهمزة الوصل (ا) تُنطق في أول الكلام وتسقط في وسطه.",
+    explanation: "يمكنك اختبار الهمزة بوضع حرف الواو قبلها؛ فإذا نُطقت فهي قطع (وإلى)، وإذا سقطت فهي وصل (والعودة).",
+    examples: [
+      { word: "إِلَى", explanation: "همزة قطع تحت الألف لأنها مكسورة وتُنطق دائماً." },
+      { word: "الْمَدْرَسَة", explanation: "همزة وصل في (ال) التعريف تسقط عند الوصل (إلى المدرسة)." },
+      { word: "أَنَا", explanation: "همزة قطع مفتوحة فوق الألف." }
+    ]
+  },
+  'u2-l3': {
+    title: "الحرف المُشدّد (التضعيف)",
+    ruleText: "الحرف المشدد هو في الأصل حرفان متماثلان، الأول ساكن والثاني متحرك، أُدمِجا معاً.",
+    explanation: "نضع الشدة (ــّ) فوق الحرف المشدد مع حركته ليدل على أنه يُنطق مرتين بقوة.",
+    examples: [
+      { word: "تَحِيَّة", explanation: "الياء مشددة بالفتح (يَّ) وهي عبارة عن ياء ساكنة ثم ياء مفتوحة." },
+      { word: "الْعَلَم", explanation: "اللام قمرية ساكنة تُنطق بوضوح." }
+    ]
+  },
+  'u2-l4': {
+    title: "في الطريق - حروف الجر ودورها",
+    ruleText: "حروف الجر تدخل على الأسماء فقط وتجعلها مجرورة (وعلامة جرها الكسرة).",
+    explanation: "من أشهر حروف الجر: (مِن، إِلَى، عَنْ، عَلَى، فِي، الْبَاء، الْكَاف، اللَّام).",
+    examples: [
+      { word: "فِي الطَّرِيقِ", explanation: "حرف الجر (في) يجر كلمة (الطريقِ) بالكسرة الظاهرة." },
+      { word: "عَلَى الرَّصِيفِ", explanation: "حرف الجر (على) يليه اسم مجرور بالكسرة." }
+    ]
+  },
+  'u3-l1': {
+    title: "ياء الملكية في الأسماء",
+    ruleText: "ياء الملكية هي ياء تضاف إلى نهاية الاسم لتدل على أن هذا الشيء يخص المتكلم.",
+    explanation: "تكون ياء الملكية دائماً مسبوقة بحرف مكسور وتجعل الكلمة مضافة للمتكلم.",
+    examples: [
+      { word: "بِلَادِي", explanation: "الياء في آخر الاسم تدل على بلدي أنا." },
+      { word: "أَبِي", explanation: "تدل على والدي أنا." },
+      { word: "كِتَابِي", explanation: "تدل على كتابي الخاص بي." }
+    ]
+  },
+  'u3-l2': {
+    title: "أسلوب النداء بـ (يَا)",
+    ruleText: "النداء هو لفت انتباه المخاطب لدعوته أو تنبيهه باستخدام أداة النداء (يَا).",
+    explanation: "تتكون جملة النداء من: أداة النداء (يَا) + المُنادى (الاسم الذي نناديه).",
+    examples: [
+      { word: "يَا بِلَادِي", explanation: "أسلوب نداء يعبر عن حب الوطن وتوجيه الخطاب له." },
+      { word: "يَا رَبَّنَا", explanation: "نداء ودعاء للخالق عز وجل." }
+    ]
+  },
+  'u3-l5': {
+    title: "عيد الاستقلال - أسماء الإشارة",
+    ruleText: "أسماء الإشارة هي كلمات نستخدمها للإشارة إلى أشخاص أو أشياء محددة.",
+    explanation: "نستخدم (هَذَا) للمفرد المذكر، و(هَذِهِ) للمفردة المؤنثة.",
+    examples: [
+      { word: "هَذَا بَلَدِي", explanation: "اسم إشارة للمفرد المذكر القريب." },
+      { word: "هَذِهِ بِلَادِي", explanation: "اسم إشارة للمؤنث أو جمع غير العاقل." }
+    ]
+  },
+  'u4-l1': {
+    title: "اللام الشمسية واللام القمرية",
+    ruleText: "تُكتب اللام الشمسية ولا تُنطق ويُشدد الحرف بعدها، بينما تُكتب اللام القمرية وتُنطق ساكنة.",
+    explanation: "حرف الدال والثاء من الحروف الشمسية، لذا تدغم اللام معهما.",
+    examples: [
+      { word: "الدِّيك", explanation: "ام شمسية لا تُنطق، وحرف الدال مضعّف." },
+      { word: "الثَّعْلَب", explanation: "لام شمسية لا تُنطق، وحرف الثاء مضعّف." },
+      { word: "الْغَابَة", explanation: "لام قمرية تُنطق بوضوح لوقوع حرف الغين بعدها." }
+    ]
+  },
+  'u4-l3': {
+    title: "حروف العطف (الواو، الفاء، ثُمَّ)",
+    ruleText: "حروف العطف تُستخدم للربط بين الكلمات أو الجمل وتنسيق المعنى بينها.",
+    explanation: "الواو تفيد المشاركة بدون ترتيب، الفاء تفيد الترتيب والسرعة، ثُمَّ تفيد الترتيب مع التراخي (التأخير).",
+    examples: [
+      { word: "الْفَأْرُ وَالْقِطُّ", explanation: "حرف العطف (الواو) يربط بين الاثنين معاً." },
+      { word: "فَهَرَبَ", explanation: "حرف العطف (الفاء) يدل على سرعة الهروب فوراً." }
+    ]
+  },
+  'u4-l4': {
+    title: "جمع التكسير وصيغ الجموع",
+    ruleText: "جمع التكسير هو ما دل على أكثر من اثنين وتغيرت فيه صورة مفرده عند الجمع.",
+    explanation: "سُمي بجمع التكسير لأنه يكسر الكلمة المفردة ويغير ترتيب حروفها أو حركاتها.",
+    examples: [
+      { word: "طُيُور", explanation: "جمع تكسير مفرده (طَائِر)." },
+      { word: "أَشْجَار", explanation: "جمع تكسير مفرده (شَجَرَة)." },
+      { word: "أَوْرَاق", explanation: "جمع تكسير مفرده (وَرَقَة)." }
+    ]
+  },
+  'u4-l5': {
+    title: "النمل - الفعل الماضي والمضارع والأمر",
+    ruleText: "الكلمة قد تكون فعلاً يدل على حدث مرتبط بزمن معين: ماضٍ، مضارع، أو أمر.",
+    explanation: "الفعل الماضي حدث وانتهى، المضارع يحدث الآن ومستمر، الأمر يطلب حدوث فعل في المستقبل.",
+    examples: [
+      { word: "قَالَ", explanation: "فعل ماضٍ مبني على الفتح يدل على قول حدث في الزمن الماضي." },
+      { word: "تَجْمَعُ", explanation: "فعل مضارع يدل على حدث مستمر الآن." },
+      { word: "احْفَظْ", explanation: "فعل أمر مبني على السكون يطلب القيام بالحفظ." }
+    ]
+  },
+  'u5-l1': {
+    title: "ضمائر المتكلم (أَنَا / نَحْنُ)",
+    ruleText: "ضمائر المتكلم نستخدمها عندما نتحدث عن أنفسنا؛ (أَنَا) للمفرد، و(نَحْنُ) للجمع والمثنى.",
+    explanation: "تساعدنا ضمائر المتكلم على التعبير عن النفس والهوية بوضوح.",
+    examples: [
+      { word: "أَنَا", explanation: "ضمير متكلم للمفرد المذكر أو المؤنث." },
+      { word: "نَحْنُ نَلْعَبُ", explanation: "ضمير متكلم للجمع يدل على المشاركة." }
+    ]
+  },
+  'u5-l2': {
+    title: "الحواس الخمس - ياء النسب المشددة",
+    ruleText: "ياء النسب هي ياء مشددة تلحق آخر الاسم المنسوب لتدل على نسبته لشيء ما.",
+    explanation: "تُكسر حركة الحرف الذي يسبق ياء النسب مباشرة وتوضع الشدة مع الحركة فوق الياء.",
+    examples: [
+      { word: "سُودَانِيّ", explanation: "منسوب إلى السودان بزيادة ياء النسب المشددة." },
+      { word: "عَرَبِيّ", explanation: "منسوب إلى العرب." }
+    ]
+  },
+  'u5-l3': {
+    title: "الدواء في الغذاء - قاعدة الهمزة المتوسطة",
+    ruleText: "تُكتب الهمزة المتوسطة بمقارنة حركتها مع حركة الحرف الذي قبلها، وتُكتب على الحرف الذي يناسب الحركة الأقوى.",
+    explanation: "ترتيب قوة الحركات: الكسرة (يناسبها الياء ئ)، ثم الضمة (يناسبها الواو ؤ)، ثم الفتحة (يناسبها الألف أ)، ثم السكون.",
+    examples: [
+      { word: "الْغِذَاءِ", explanation: "همزة متطرفة مكسورة مسبوقة بمد ساكن تكتب على السطر." },
+      { word: "الدَّوَاءِ", explanation: "همزة متطرفة مكسورة تكتب على السطر بعد الألف." }
+    ]
+  },
+  'u5-l4': {
+    title: "المحافظة على الأسنان - التاء المربوطة والمفتوحة",
+    ruleText: "التاء المفتوحة تُكتب (ت) وتُنطق تاء في الوقف والوصل، بينما التاء المربوطة (ة) تُنطق هاء عند الوقف.",
+    explanation: "لتفريق بينهما، قف على الكلمة بالسكون؛ فإذا نطقها تغير إلى (هاء) فهي مربوطة، وإن بقيت (تاء) فهي مفتوحة.",
+    examples: [
+      { word: "فَرْشَاة", explanation: "عند الوقف ننطقها هاء (فرشاه) وعند الوصل تاء، لذا هي تاء مربوطة." },
+      { word: "نَظَافَة", explanation: "تاء مربوطة تُنطق هاء عند الوقف (نظافه)." }
+    ]
+  },
+  'u6-l1': {
+    title: "المزارع الحكيم - أقسام الكلمة",
+    ruleText: "تتكون اللغة العربية من ثلاثة أنواع من الكلمات: الاسم، والفعل، والحرف.",
+    explanation: "الاسم يدل على إنسان أو حيوان أو جماد، الفعل يدل على حدث وزمن، والحرف يربط بين الكلمات.",
+    examples: [
+      { word: "مُزَارِعٌ", explanation: "اسم يدل على مهنة إنسان يقبل التنوين وال التعريف." },
+      { word: "يَزْرَعُ", explanation: "فعل مضارع يدل على عمل الزراعة مستمر الآن." },
+      { word: "فِي", explanation: "حرف جر يربط الكلمات داخل الجملة." }
+    ]
+  },
+  'u6-l2': {
+    title: "أشعب الأكول - همزة القطع",
+    ruleText: "تُكتب همزة القطع (أ) فوق الألف إذا كانت مفتوحة أو مضمومة، وتُكتب تحت الألف (إ) إذا كانت مكسورة.",
+    explanation: "الهمزة هي صوت يخرج من الحلق وتُرسم علامة رأس العين (ء) لتوضيحه.",
+    examples: [
+      { word: "أَشْعَبُ", explanation: "همزة قطع مفتوحة فوق الألف." },
+      { word: "أُكُولٌ", explanation: "همزة قطع مضمومة فوق الألف." },
+      { word: "إِكْرَامٌ", explanation: "همزة قطع مكسورة تحت الألف." }
+    ]
+  },
+  'u6-l3': {
+    title: "ملح الطعام - اللام القمرية وحروفها",
+    ruleText: "تُنطق اللام القمرية بوضوح وتكون ساكنة ويأتي بعدها حرف غير مشدد.",
+    explanation: "حروف اللام القمرية تجتمع في (ابغ حجك وخف عقيمه) مثل الميم في ملح والعين في عيش.",
+    examples: [
+      { word: "الْمِلْح", explanation: "لام قمرية تُنطق بوضوح، وحرف الميم مفتوح بعدها." },
+      { word: "الْبَحْر", explanation: "لام قمرية تُنطق بوضوح." }
+    ]
+  },
+  'u6-l4': {
+    title: "التاجر علي واللصوص - الأسماء الموصولة",
+    ruleText: "الأسماء الموصولة هي أسماء نستخدمها لربط الجمل وتوضيح المعنى الخاص بالاسم الذي قبلها.",
+    explanation: "نستخدم (الَّذِي) للمفرد المذكر، ونستخدم (الَّتِي) للمفردة المؤنثة.",
+    examples: [
+      { word: "الرَّجُلُ الَّذِي", explanation: "اسم موصول للمفرد المذكر." },
+      { word: "الْمَدْرَسَةُ الَّتِي", explanation: "اسم موصول للمفردة المؤنثة." }
+    ]
+  },
+  'u6-l5': {
+    title: "لعبة الولد التائه - أسلوب الاستفهام",
+    ruleText: "أسلوب الاستفهام هو جملة نستخدمها للسؤال عن شيء مجهول وننهيها بعلامة الاستفهام (؟).",
+    explanation: "من أشهر أدوات الاستفهام: (مَنْ) للعاقل، (أَيْنَ) للمكان، (مَتَى) للزمان، (كَيْفَ) للحال.",
+    examples: [
+      { word: "أَيْنَ الْوَلَدُ؟", explanation: "سؤال عن مكان الولد التائه باستخدام أداة الاستفهام أين." },
+      { word: "كَيْفَ نَلْعَبُ؟", explanation: "سؤال عن طريقة أو حال اللعب." }
+    ]
+  }
+};
 
 // Static Image Imports for Production Build Compatibility
 import imgSudaneseFamilyLove from '../assets/images/sudanese_family_love_1783937441296.jpg';
@@ -165,6 +386,8 @@ export default function LessonView({
 
   const showGrammarCard = externalShowGrammarCard !== undefined ? externalShowGrammarCard : localShowGrammarCard;
   const setShowGrammarCard = externalSetShowGrammarCard !== undefined ? externalSetShowGrammarCard : setLocalShowGrammarCard;
+
+  const activeGrammarRule = lesson.grammarRule || FALLBACK_GRAMMAR_RULES[lesson.id];
 
   // Reading Mode States (with LocalStorage persistence)
   const [readingMode, setReadingMode] = useState<'standard' | 'warm' | 'soft-dark'>(() => {
@@ -925,40 +1148,51 @@ export default function LessonView({
       </motion.button>
 
       {/* Floating Grammar Card Box (صندوق القواعد العائم) */}
-      <AnimatePresence>
-        {showGrammarCard && lesson.grammarRule && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" dir="rtl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 280 }}
-              className="relative max-w-2xl w-full max-h-[85vh] overflow-y-auto bg-white rounded-[32px] border-4 border-amber-400 shadow-2xl p-2"
+      {activeGrammarRule && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showGrammarCard && (
+            <motion.div 
+              key="grammar-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" 
+              dir="rtl"
             >
-              {/* Close Button on top of the card */}
-              <button
-                onClick={() => {
-                  setShowGrammarCard(false);
-                  try { playSound('click'); } catch(e){}
-                }}
-                className="absolute top-5 left-5 z-20 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-all cursor-pointer shadow-md active:scale-95"
-                title="إغلاق ❌"
+              <motion.div
+                key="grammar-modal"
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 280 }}
+                className="relative max-w-2xl w-full max-h-[85vh] overflow-y-auto bg-white rounded-[32px] border-4 border-amber-400 shadow-2xl p-2"
               >
-                <X className="w-5 h-5" />
-              </button>
+                {/* Close Button on top of the card */}
+                <button
+                  onClick={() => {
+                    setShowGrammarCard(false);
+                    try { playSound('click'); } catch(e){}
+                  }}
+                  className="absolute top-5 left-5 z-20 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-all cursor-pointer shadow-md active:scale-95"
+                  title="إغلاق ❌"
+                >
+                  <X className="w-5 h-5" />
+                </button>
 
-              <GrammarCard
-                grammarRule={lesson.grammarRule}
-                readingMode={readingMode}
-                speakWord={speakWord}
-              />
+                <GrammarCard
+                  grammarRule={activeGrammarRule}
+                  readingMode={readingMode}
+                  speakWord={speakWord}
+                />
+              </motion.div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Floating Grammar Rules Trigger Button */}
-      {lesson.grammarRule && (
+      {activeGrammarRule && (
         <motion.button
           onClick={() => {
             setShowGrammarCard(!showGrammarCard);
