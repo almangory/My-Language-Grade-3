@@ -23,58 +23,84 @@ interface TextbookFlipbookProps {
   onSelectLesson: (lesson: Lesson) => void;
 }
 
+// Static Image Imports for Production Build Compatibility
+import imgSudaneseFamilyLove from '../assets/images/sudanese_family_love_1783937441296.jpg';
+import imgSudaneseParentHug from '../assets/images/sudanese_parent_hug_1783937460334.jpg';
+import imgSudaneseGuestWelcome from '../assets/images/sudanese_guest_welcome_1783937425720.jpg';
+import imgSudaneseChickenSeller from '../assets/images/sudanese_chicken_seller_1783937475265.jpg';
+import imgSudaneseSchoolKids from '../assets/images/sudanese_school_kids_1783937490242.jpg';
+import imgSchoolCleaningKids from '../assets/images/school_cleaning_kids_1783932758944.jpg';
+import imgSudanPrideIllustration from '../assets/images/sudan_pride_illustration_1783925595849.jpg';
+import imgSudanMapLandscape from '../assets/images/sudan_map_landscape_1783932792262.jpg';
+import imgSudanNatureLandscape from '../assets/images/sudan_nature_landscape_1783932807921.jpg';
+import imgSudaneseGirlHorse from '../assets/images/sudanese_girl_horse_1783931339607.jpg';
+import imgSudaneseSoldierHero from '../assets/images/sudanese_soldier_hero_1783932818588.jpg';
+import imgSudanIndependenceCelebration from '../assets/images/sudan_independence_celebration_1783932830535.jpg';
+import imgForestAnimalsIllustration from '../assets/images/forest_animals_illustration_1783925610838.jpg';
+import imgBeehiveHoneyBees from '../assets/images/beehive_honey_bees_1783931318188.jpg';
+import imgCartoonCatMouse from '../assets/images/cartoon_cat_mouse_1783932842389.jpg';
+import imgMeadowBirdsSinging from '../assets/images/meadow_birds_singing_1783932858031.jpg';
+import imgAnthillBusyAnts from '../assets/images/anthill_busy_ants_1783932869246.jpg';
+import imgBodyHealthRunning from '../assets/images/body_health_running_1783932879813.jpg';
+import imgSudaneseWiseFarmer from '../assets/images/sudanese_wise_farmer_1783937507425.jpg';
+import imgTeethBrushingKids from '../assets/images/teeth_brushing_kids_1783931303450.jpg';
+import imgCoveredCleanFood from '../assets/images/covered_clean_food_1783932920644.jpg';
+import imgHungryBoyFeast from '../assets/images/hungry_boy_feast_1783932935766.jpg';
+import imgSaltFlatsPortSudan from '../assets/images/salt_flats_port_sudan_1783932946735.jpg';
+import imgMagicalCaveTreasure from '../assets/images/magical_cave_treasure_1783931328825.jpg';
+
 // Map of custom lesson illustrations (matching LessonView.tsx)
 const LESSON_ILLUSTRATIONS: Record<string, string> = {
   // Unit 1: قيم وآداب
-  'u1-l1': '/src/assets/images/sudanese_family_love_1783937441296.jpg', // حب الوالدين
-  'u1-l2': '/src/assets/images/sudanese_parent_hug_1783937460334.jpg', // نشيد أبي وأمي
-  'u1-l3': '/src/assets/images/sudanese_guest_welcome_1783937425720.jpg', // إكرام الجار والضيف
-  'u1-l4': '/src/assets/images/sudanese_chicken_seller_1783937475265.jpg', // العيش الشريف
-  'u1-l5': '/src/assets/images/sudanese_family_love_1783937441296.jpg', // مكارم الأخلاق
+  'u1-l1': imgSudaneseFamilyLove, // حب الوالدين
+  'u1-l2': imgSudaneseParentHug, // نشيد أبي وأمي
+  'u1-l3': imgSudaneseGuestWelcome, // إكرام الجار والضيف
+  'u1-l4': imgSudaneseChickenSeller, // العيش الشريف
+  'u1-l5': imgSudaneseFamilyLove, // مكارم الأخلاق
 
   // Unit 2: مدرستي
-  'u2-l1': '/src/assets/images/sudanese_school_kids_1783937490242.jpg', // العودة إلى المدرسة
-  'u2-l2': '/src/assets/images/school_cleaning_kids_1783932758944.jpg', // نظافة المدرسة
-  'u2-l3': '/src/assets/images/sudan_pride_illustration_1783925595849.jpg', // تحية العلم
-  'u2-l4': '/src/assets/images/sudanese_school_kids_1783937490242.jpg', // في الطريق
-  'u2-l5': '/src/assets/images/sudanese_school_kids_1783937490242.jpg', // آداب المشي
+  'u2-l1': imgSudaneseSchoolKids, // العودة إلى المدرسة
+  'u2-l2': imgSchoolCleaningKids, // نظافة المدرسة
+  'u2-l3': imgSudanPrideIllustration, // تحية العلم
+  'u2-l4': imgSudaneseSchoolKids, // في الطريق
+  'u2-l5': imgSudaneseSchoolKids, // آداب المشي
 
   // Unit 3: وطني
-  'u3-l1': '/src/assets/images/sudan_map_landscape_1783932792262.jpg', // أحب بلادي
-  'u3-l2': '/src/assets/images/sudan_nature_landscape_1783932807921.jpg', // يا بلادي
-  'u3-l3': '/src/assets/images/sudanese_girl_horse_1783931339607.jpg',      // مهيرة بت عبود
-  'u3-l4': '/src/assets/images/sudanese_soldier_hero_1783932818588.jpg', // عبد الفضيل الماظ
-  'u3-l5': '/src/assets/images/sudan_independence_celebration_1783932830535.jpg', // عيد الاستقلال
+  'u3-l1': imgSudanMapLandscape, // أحب بلادي
+  'u3-l2': imgSudanNatureLandscape, // يا بلادي
+  'u3-l3': imgSudaneseGirlHorse,      // مهيرة بت عبود
+  'u3-l4': imgSudaneseSoldierHero, // عبد الفضيل الماظ
+  'u3-l5': imgSudanIndependenceCelebration, // عيد الاستقلال
 
   // Unit 4: من حكم الحيوان
-  'u4-l1': '/src/assets/images/forest_animals_illustration_1783925610838.jpg', // الديك والثعلب
-  'u4-l2': '/src/assets/images/beehive_honey_bees_1783931318188.jpg',         // خلية النحل
-  'u4-l3': '/src/assets/images/cartoon_cat_mouse_1783932842389.jpg', // الفأر والقط
-  'u4-l4': '/src/assets/images/meadow_birds_singing_1783932858031.jpg', // طيور الرياض
-  'u4-l5': '/src/assets/images/anthill_busy_ants_1783932869246.jpg', // النمل النشيط
+  'u4-l1': imgForestAnimalsIllustration, // الديك والثعلب
+  'u4-l2': imgBeehiveHoneyBees,         // خلية النحل
+  'u4-l3': imgCartoonCatMouse, // الفأر والقط
+  'u4-l4': imgMeadowBirdsSinging, // طيور الرياض
+  'u4-l5': imgAnthillBusyAnts, // النمل النشيط
 
   // Unit 5: صحتي
-  'u5-l1': '/src/assets/images/body_health_running_1783932879813.jpg', // أنا جسمك
-  'u5-l2': '/src/assets/images/sudanese_wise_farmer_1783937507425.jpg', // الحواس الخمس
-  'u5-l3': '/src/assets/images/sudanese_family_love_1783937441296.jpg', // الدواء في الغذاء
-  'u5-l4': '/src/assets/images/teeth_brushing_kids_1783931303450.jpg',      // الأسنان اللامعة
-  'u5-l5': '/src/assets/images/covered_clean_food_1783932920644.jpg', // الأطعمة المكشوفة
+  'u5-l1': imgBodyHealthRunning, // أنا جسمك
+  'u5-l2': imgSudaneseWiseFarmer, // الحواس الخمس
+  'u5-l3': imgSudaneseFamilyLove, // الدواء في الغذاء
+  'u5-l4': imgTeethBrushingKids,      // الأسنان اللامعة
+  'u5-l5': imgCoveredCleanFood, // الأطعمة المكشوفة
 
   // Unit 6: تأملات متباينة
-  'u6-l1': '/src/assets/images/sudanese_wise_farmer_1783937507425.jpg',  // المزارع الحكيم
-  'u6-l2': '/src/assets/images/hungry_boy_feast_1783932935766.jpg', // أشعب الأكول
-  'u6-l3': '/src/assets/images/salt_flats_port_sudan_1783932946735.jpg',  // ملح الطعام
-  'u6-l4': '/src/assets/images/magical_cave_treasure_1783931328825.jpg',     // علي واللصوص
-  'u6-l5': '/src/assets/images/sudanese_school_kids_1783937490242.jpg', // لعبة الولد التائه
+  'u6-l1': imgSudaneseWiseFarmer,  // المزارع الحكيم
+  'u6-l2': imgHungryBoyFeast, // أشعب الأكول
+  'u6-l3': imgSaltFlatsPortSudan,  // ملح الطعام
+  'u6-l4': imgMagicalCaveTreasure,     // علي واللصوص
+  'u6-l5': imgSudaneseSchoolKids, // لعبة الولد التائه
 };
 
 const UNIT_ILLUSTRATIONS: Record<string, string> = {
-  'unit-1': '/src/assets/images/sudanese_family_love_1783937441296.jpg',
-  'unit-2': '/src/assets/images/sudanese_school_kids_1783937490242.jpg',
-  'unit-3': '/src/assets/images/sudan_pride_illustration_1783925595849.jpg',
-  'unit-4': '/src/assets/images/forest_animals_illustration_1783925610838.jpg',
-  'unit-5': '/src/assets/images/sudanese_family_love_1783937441296.jpg',
-  'unit-6': '/src/assets/images/sudanese_wise_farmer_1783937507425.jpg',
+  'unit-1': imgSudaneseFamilyLove,
+  'unit-2': imgSudaneseSchoolKids,
+  'unit-3': imgSudanPrideIllustration,
+  'unit-4': imgForestAnimalsIllustration,
+  'unit-5': imgSudaneseFamilyLove,
+  'unit-6': imgSudaneseWiseFarmer,
 };
 
 const UNIT_THEME_COLORS: Record<string, { bg: string, text: string, border: string, badge: string, accent: string }> = {

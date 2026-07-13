@@ -1157,102 +1157,102 @@ export default function LessonView({
             }`}
             dir="rtl"
           >
-            {isAudioMinimized ? (
-              <div className="flex items-center justify-between w-full gap-3 select-none">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl animate-bounce">🔊</span>
-                  <div className="text-right">
-                    <p className="text-[10px] text-teal-100 font-extrabold leading-tight">جاري الاستماع للدرس... 📖</p>
-                    <p className="text-xs text-white font-black leading-tight max-w-[140px] truncate">{lesson.title}</p>
-                  </div>
+            {/* Minimized layout */}
+            <div className={`flex items-center justify-between w-full gap-3 select-none ${isAudioMinimized ? '' : 'hidden'}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-xl animate-bounce">🔊</span>
+                <div className="text-right">
+                  <p className="text-[10px] text-teal-100 font-extrabold leading-tight">جاري الاستماع للدرس... 📖</p>
+                  <p className="text-xs text-white font-black leading-tight max-w-[140px] truncate">{lesson.title}</p>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => {
-                      setIsAudioMinimized(false);
-                      try { playSound('click'); } catch(e){}
-                    }}
-                    className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-black transition-colors cursor-pointer"
-                    title="عرض أزرار التحكم بالصوت ⚙️"
-                  >
-                    عرض التحكم ⚙️
-                  </button>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => {
+                    setIsAudioMinimized(false);
+                    try { playSound('click'); } catch(e){}
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-black transition-colors cursor-pointer"
+                  title="عرض أزرار التحكم بالصوت ⚙️"
+                >
+                  عرض التحكم ⚙️
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAudioPlayer(false);
+                    setIsAudioPlaying(false);
+                    setIsAudioMinimized(false);
+                    try { playSound('click'); } catch(e){}
+                  }}
+                  className="p-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black transition-colors cursor-pointer"
+                  title="إغلاق وإيقاف الصوت ❌"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Expanded Full Player layout */}
+            <div className={isAudioMinimized ? 'hidden' : ''}>
+              {/* Header of the floating box */}
+              <div className="flex items-center justify-between border-b-2 border-dashed border-slate-100 pb-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🤖</span>
+                  <span className="text-xs font-black text-coral bg-cream px-2.5 py-1 rounded-full border border-yellow-border">
+                    مُسَاعِدُ الْقِرَاءَةِ الذَّكِيِّ
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {isAudioPlaying && (
+                    <button
+                      onClick={() => {
+                        setIsAudioMinimized(true);
+                        try { playSound('click'); } catch(e){}
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-[10px] font-black transition cursor-pointer border border-teal-200"
+                      title="تصغير لتتبع القراءة ↘️"
+                    >
+                      تصغير لتتبع النص ↘️
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowAudioPlayer(false);
-                      setIsAudioPlaying(false);
-                      setIsAudioMinimized(false);
                       try { playSound('click'); } catch(e){}
                     }}
-                    className="p-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black transition-colors cursor-pointer"
-                    title="إغلاق وإيقاف الصوت ❌"
+                    className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all cursor-pointer border border-transparent hover:border-slate-200 active:scale-95"
+                    title="إغلاق الصندوق ❌"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-            ) : (
-              <>
-                {/* Header of the floating box */}
-                <div className="flex items-center justify-between border-b-2 border-dashed border-slate-100 pb-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🤖</span>
-                    <span className="text-xs font-black text-coral bg-cream px-2.5 py-1 rounded-full border border-yellow-border">
-                      مُسَاعِدُ الْقِرَاءَةِ الذَّكِيِّ
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {isAudioPlaying && (
-                      <button
-                        onClick={() => {
-                          setIsAudioMinimized(true);
-                          try { playSound('click'); } catch(e){}
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-[10px] font-black transition cursor-pointer border border-teal-200"
-                        title="تصغير لتتبع القراءة ↘️"
-                      >
-                        تصغير لتتبع النص ↘️
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        setShowAudioPlayer(false);
-                        try { playSound('click'); } catch(e){}
-                      }}
-                      className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all cursor-pointer border border-transparent hover:border-slate-200 active:scale-95"
-                      title="إغلاق الصندوق ❌"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
 
-                {/* AudioPlayer inside the box */}
-                <div className="max-h-[380px] overflow-y-auto pr-1">
-                  <AudioPlayer 
-                    textToRead={getFullTextForReading()} 
-                    title={lesson.title} 
-                    lessonId={lesson.id}
-                    audioUrl={lesson.audioUrl}
-                    onBoundary={setActiveCharIndex}
-                    onEnd={() => {
-                      setActiveCharIndex(-1);
-                      setIsAudioPlaying(false);
-                      setIsAudioMinimized(false);
-                    }}
-                    onStart={() => {
-                      setActiveCharIndex(-1);
-                      setIsAudioPlaying(true);
-                      setIsAudioMinimized(true); // Auto minimize to prevent blockage
-                    }}
-                  />
-                </div>
-                
-                <p className="text-center text-[10px] font-bold text-slate-400 mt-3 leading-normal">
-                  💡 يمكنك استماع القراءة أثناء تصفح الدرس وقراءة الكلمات المضيئة!
-                </p>
-              </>
-            )}
+              {/* AudioPlayer inside the box */}
+              <div className="max-h-[380px] overflow-y-auto pr-1">
+                <AudioPlayer 
+                  textToRead={getFullTextForReading()} 
+                  title={lesson.title} 
+                  lessonId={lesson.id}
+                  audioUrl={lesson.audioUrl}
+                  onBoundary={setActiveCharIndex}
+                  onEnd={() => {
+                    setActiveCharIndex(-1);
+                    setIsAudioPlaying(false);
+                    setIsAudioMinimized(false);
+                  }}
+                  onStart={() => {
+                    setActiveCharIndex(-1);
+                    setIsAudioPlaying(true);
+                    setIsAudioMinimized(true); // Auto minimize to prevent blockage
+                  }}
+                />
+              </div>
+              
+              <p className="text-center text-[10px] font-bold text-slate-400 mt-3 leading-normal">
+                💡 يمكنك استماع القراءة أثناء تصفح الدرس وقراءة الكلمات المضيئة!
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
