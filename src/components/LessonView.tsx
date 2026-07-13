@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Lesson, LessonType } from '../types';
-import { Music, Star, BookOpen, Quote, Maximize2 } from 'lucide-react';
+import { Music, Star, BookOpen, Quote, Maximize2, Volume2, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
+import GrammarCard from './GrammarCard';
+import { playSound } from '../utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 const LESSON_ILLUSTRATIONS: Record<string, string> = {
@@ -126,6 +128,7 @@ function tokenizeText(text: string): TextToken[] {
 export default function LessonView({ lesson }: LessonViewProps) {
   const [activeCharIndex, setActiveCharIndex] = React.useState<number>(-1);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+  const [showAudioPlayer, setShowAudioPlayer] = useState<boolean>(false);
 
   // Reading Mode States (with LocalStorage persistence)
   const [readingMode, setReadingMode] = useState<'standard' | 'warm' | 'soft-dark'>(() => {
@@ -414,17 +417,6 @@ export default function LessonView({ lesson }: LessonViewProps) {
           </div>
         )}
       </div>
-
-      {/* TTS Reader Section */}
-      <AudioPlayer 
-        textToRead={getFullTextForReading()} 
-        title={lesson.title} 
-        lessonId={lesson.id}
-        audioUrl={lesson.audioUrl}
-        onBoundary={setActiveCharIndex}
-        onEnd={() => setActiveCharIndex(-1)}
-        onStart={() => setActiveCharIndex(-1)}
-      />
 
       {/* Lesson Body Sheet (Simulating an editable Interactive PDF book leaf) */}
       <div className={`rounded-[40px] p-6 md:p-10 shadow-lg border-2 transition-all duration-300 relative ${
@@ -788,6 +780,15 @@ export default function LessonView({ lesson }: LessonViewProps) {
         </div>
       </div>
 
+      {/* Grammar Rule Section (قسم القواعد الإملائية واللغوية) */}
+      {lesson.grammarRule && (
+        <GrammarCard
+          grammarRule={lesson.grammarRule}
+          readingMode={readingMode}
+          speakWord={speakWord}
+        />
+      )}
+
       {/* Fullscreen Image Overlay */}
       <AnimatePresence>
         {fullScreenImage && (
@@ -824,6 +825,77 @@ export default function LessonView({ lesson }: LessonViewProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Floating Audio Player Box (صندوق القارئ الآلي العائم) */}
+      <AnimatePresence>
+        {showAudioPlayer && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 280 }}
+            className="fixed bottom-44 right-4 left-4 sm:left-auto sm:right-6 md:right-12 z-40 max-w-full sm:w-[500px] bg-white rounded-[32px] border-4 border-[#FFD93D] shadow-2xl p-5"
+            dir="rtl"
+          >
+            {/* Header of the floating box */}
+            <div className="flex items-center justify-between border-b-2 border-dashed border-slate-100 pb-3 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🤖</span>
+                <span className="text-xs font-black text-coral bg-cream px-2.5 py-1 rounded-full border border-yellow-border">
+                  مُسَاعِدُ الْقِرَاءَةِ الذَّكِيِّ
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAudioPlayer(false);
+                  try { playSound('click'); } catch(e){}
+                }}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all cursor-pointer border border-transparent hover:border-slate-200 active:scale-95"
+                title="إغلاق الصندوق ❌"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* AudioPlayer inside the box */}
+            <div className="max-h-[380px] overflow-y-auto pr-1">
+              <AudioPlayer 
+                textToRead={getFullTextForReading()} 
+                title={lesson.title} 
+                lessonId={lesson.id}
+                audioUrl={lesson.audioUrl}
+                onBoundary={setActiveCharIndex}
+                onEnd={() => setActiveCharIndex(-1)}
+                onStart={() => setActiveCharIndex(-1)}
+              />
+            </div>
+            
+            <p className="text-center text-[10px] font-bold text-slate-400 mt-3 leading-normal">
+              💡 يمكنك استماع القراءة أثناء تصفح الدرس وقراءة الكلمات المضيئة!
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Audio Player Trigger Button (أيقونة الصوت العائمة) */}
+      <motion.button
+        onClick={() => {
+          setShowAudioPlayer(!showAudioPlayer);
+          try { playSound('click'); } catch(e){}
+        }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        className={`fixed bottom-24 right-6 md:right-12 z-50 flex items-center justify-center gap-2.5 px-5 py-4 rounded-full shadow-2xl transition-all duration-300 border-3 border-white ${
+          showAudioPlayer
+            ? 'bg-[#FF6F61] text-white hover:bg-[#FF6F61]/90 shadow-rose-500/30'
+            : 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white animate-bounce shadow-emerald-500/30'
+        }`}
+        style={{ animationDuration: '3s' }}
+        title="تنشيط القارئ الصوتي الآلي 🤖🔊"
+      >
+        <Volume2 className={`w-6 h-6 ${showAudioPlayer ? 'rotate-12' : 'animate-pulse'}`} />
+        <span className="text-sm font-black hidden sm:inline-block tracking-tight">الْقَارِئُ الْآلِيُّ 🤖🔊</span>
+      </motion.button>
     </div>
   );
 }

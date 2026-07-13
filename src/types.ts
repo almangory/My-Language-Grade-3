@@ -33,6 +33,13 @@ export interface PoemStanza {
   hemistich2: string; // العجز
 }
 
+export interface GrammarRule {
+  title: string;
+  ruleText: string;
+  explanation: string;
+  examples: { word: string; explanation: string }[];
+}
+
 export interface Lesson {
   id: string;
   unitId: string;
@@ -43,6 +50,7 @@ export interface Lesson {
   stanzas?: PoemStanza[]; // For poems
   questions: Question[];
   audioUrl?: string; // Optional predefined, else we use TTS
+  grammarRule?: GrammarRule; // Optional grammar rule for the lesson
 }
 
 export interface Unit {

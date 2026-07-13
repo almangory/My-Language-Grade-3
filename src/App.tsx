@@ -12,11 +12,15 @@ import SmartSearchBot from './components/SmartSearchBot';
 import { playSound } from './utils';
 import { BookOpen, Award, ArrowRight, Star, Wifi, WifiOff, Download, CheckCircle, RefreshCw } from 'lucide-react';
 
+// يمكن تغيير مسار الشعار بسهولة من هنا:
+export const APP_LOGO_PATH = '/pwa_icon.png';
+
 const ALL_RESOURCES = [
   '/',
   '/index.html',
   '/manifest.json',
   '/pwa_icon.svg',
+  '/pwa_icon.png',
   '/src/assets/audio/u5_l5_uncovered_food.mp3',
   '/src/assets/images/sudanese_family_love_1783937441296.jpg',
   '/src/assets/images/sudanese_parent_hug_1783937460334.jpg',
@@ -344,13 +348,32 @@ export default function App() {
         
         {/* Playful logo and credentials */}
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 bg-[#14212e] rounded-xl flex items-center justify-center shadow-md border border-[#d4af37]/70 overflow-hidden p-0.5">
-            <img 
-              src="/pwa_icon.svg" 
-              alt="شعار نقلة NAQLA" 
-              className="w-full h-full object-contain"
-              referrerPolicy="no-referrer"
-            />
+          <div className="relative">
+            <div className="w-14 h-14 bg-[#14212e] rounded-xl flex items-center justify-center shadow-md border border-[#d4af37]/70 overflow-hidden p-0.5">
+              <img 
+                src={APP_LOGO_PATH} 
+                alt="شعار نقلة NAQLA" 
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            {/* Very small Wi-Fi button on the bottom-left of the logo */}
+            <button
+              onClick={() => {
+                setShowOfflinePanel(!showOfflinePanel);
+                playSound('click');
+              }}
+              className={`absolute -bottom-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 cursor-pointer transition-all hover:scale-110 active:scale-95 ${
+                showOfflinePanel 
+                  ? 'bg-[#d4af37] text-[#14212e] border-white' 
+                  : isOnline 
+                    ? 'bg-emerald-500 text-white border-white' 
+                    : 'bg-amber-500 text-white border-white animate-pulse'
+              }`}
+              title="حالة الاتصال والتحميل بدون إنترنت 📡"
+            >
+              {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+            </button>
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
@@ -371,32 +394,9 @@ export default function App() {
       <main className={`${mainTab === 'flipbook' ? 'max-w-none w-full px-2 md:px-6' : 'max-w-6xl w-full mx-auto px-4 md:px-8'} mt-6 flex-1 flex flex-col gap-6`}>
         
         {/* Offline & Connection Management Panel - Collapsible Wi-Fi Icon Only */}
-        <div className="w-full max-w-4xl mx-auto flex flex-col items-center select-none gap-3">
-          {/* Pulsing Wi-Fi Icon Toggle Button */}
-          <button
-            onClick={() => {
-              setShowOfflinePanel(!showOfflinePanel);
-              playSound('click');
-            }}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all border-3 cursor-pointer hover:scale-110 active:scale-95 relative ${
-              showOfflinePanel 
-                ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-yellow-accent' 
-                : isOnline 
-                  ? 'bg-emerald-50 text-emerald-600 border-emerald-300 hover:bg-emerald-100' 
-                  : 'bg-amber-50 text-amber-600 border-amber-300 hover:bg-amber-100 animate-pulse'
-            }`}
-            title="حالة الاتصال والتحميل بدون إنترنت 📡"
-          >
-            {isOnline ? <Wifi className="w-6 h-6" /> : <WifiOff className="w-6 h-6 animate-bounce" />}
-            {/* Status dot indicator */}
-            <span className={`absolute top-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${
-              isOnline ? 'bg-emerald-500' : 'bg-amber-500'
-            }`}></span>
-          </button>
-
-          {/* Expanded panel details */}
-          {showOfflinePanel && (
-            <div className="w-full bg-white p-4 rounded-[28px] border-2 border-yellow-border shadow-md flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-200">
+        {showOfflinePanel && (
+          <div className="w-full max-w-4xl mx-auto flex flex-col items-center select-none gap-3 animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className="w-full bg-white p-4 rounded-[28px] border-2 border-yellow-border shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
               {/* Connection Status Badge */}
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
@@ -483,8 +483,8 @@ export default function App() {
                 )}
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Playful top-level tab switchers - Sticky below the header */}
         <div className="sticky top-20 z-30 bg-cream/95 backdrop-blur-md py-3 flex justify-center select-none w-full transition-all">
