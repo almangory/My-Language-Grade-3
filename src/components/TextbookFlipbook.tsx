@@ -741,7 +741,7 @@ export default function TextbookFlipbook({ units, completedLessons, onSelectLess
     <div 
       ref={bookContainerRef}
       className={`w-full flex flex-col gap-4 font-sans select-none text-right ${
-        isFullscreen ? 'bg-cream p-6 md:p-10 h-screen justify-between overflow-hidden' : ''
+        isFullscreen ? 'bg-cream p-3 md:p-6 h-screen justify-between overflow-hidden' : ''
       }`}
       dir="rtl"
     >
@@ -806,7 +806,11 @@ export default function TextbookFlipbook({ units, completedLessons, onSelectLess
 
       {/* Main interactive Book Stage Wrapper */}
       <div 
-        className="flex-1 flex items-center justify-center relative py-4 min-h-[460px] md:min-h-[600px] lg:min-h-[680px] bg-slate-100/50 rounded-[32px] border-2 border-dashed border-yellow-border/40 overflow-hidden relative cursor-grab active:cursor-grabbing shadow-inner"
+        className={`flex-grow flex items-center justify-center relative py-4 bg-slate-100/50 rounded-[32px] border-2 border-dashed border-yellow-border/40 overflow-hidden cursor-grab active:cursor-grabbing shadow-inner ${
+          isFullscreen 
+            ? 'min-h-0 h-0 flex-1' 
+            : 'min-h-[460px] md:min-h-[600px] lg:min-h-[680px]'
+        }`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -818,7 +822,11 @@ export default function TextbookFlipbook({ units, completedLessons, onSelectLess
 
         {/* The Realistic Book Layout structure */}
         <div 
-          className="relative w-full max-w-[96vw] lg:max-w-[94vw] xl:max-w-[92vw] aspect-[4/3] md:aspect-[16/10] lg:aspect-[16/9.5] flex justify-center items-center transition-transform duration-300 relative z-10 select-none px-2 md:px-4"
+          className={`relative w-full transition-transform duration-300 z-10 select-none px-2 md:px-4 flex justify-center items-center ${
+            isSpreading 
+              ? 'aspect-[16/10] max-h-full max-w-[115vh] lg:max-w-[125vh]' 
+              : 'aspect-[2/3] max-h-full max-w-[50vh]'
+          }`}
           style={{
             transform: `translateX(${dragOffset * 0.15}px)`
           }}

@@ -9,6 +9,7 @@ import DictionaryView from './components/DictionaryView';
 import InteractiveGames from './components/InteractiveGames';
 import AssessmentCenter from './components/AssessmentCenter';
 import SmartSearchBot from './components/SmartSearchBot';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { playSound } from './utils';
 import { BookOpen, Award, ArrowRight, Star, Wifi, WifiOff, Download, CheckCircle, RefreshCw } from 'lucide-react';
 
@@ -73,6 +74,10 @@ export default function App() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const isPopStateRef = useRef(false);
 
+  // PWA states & automatic triggering
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState<boolean>(false);
+
   // Connection & Offline states
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [downloadStatus, setDownloadStatus] = useState<'idle' | 'downloading' | 'completed' | 'error'>('idle');
@@ -102,6 +107,65 @@ export default function App() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Manage PWA install prompt logic
+  useEffect(() => {
+    const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent.toLowerCase() : '';
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+    const isIos = /iphone|ipad|ipod/.test(userAgent);
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      
+      // Auto show install prompt on Android/desktop Chrome if not installed & not dismissed
+      if (isMobile && !isStandalone) {
+        const dismissed = localStorage.getItem('pwa_install_dismissed_v1');
+        if (!dismissed) {
+          setShowInstallPrompt(true);
+        }
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Auto show iOS guided install tutorial since iOS doesn't fire beforeinstallprompt
+    if (isIos && isMobile && !isStandalone) {
+      const dismissed = localStorage.getItem('pwa_install_dismissed_v1');
+      if (!dismissed) {
+        const timer = setTimeout(() => {
+          setShowInstallPrompt(true);
+        }, 1500); // Friendly 1.5s delay
+        return () => clearTimeout(timer);
+      }
+    }
+
+    // Fallback timer for Android browsers that already cached/ignored beforeinstallprompt or need a gentle push
+    if (!isIos && isMobile && !isStandalone) {
+      const dismissed = localStorage.getItem('pwa_install_dismissed_v1');
+      if (!dismissed) {
+        const timer = setTimeout(() => {
+          setShowInstallPrompt(true);
+        }, 3000); // 3s delay to let everything initialize
+        return () => clearTimeout(timer);
+      }
+    }
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setShowInstallPrompt(false);
+      localStorage.setItem('pwa_install_dismissed_v1', 'true');
+      playSound('success');
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -387,9 +451,22 @@ export default function App() {
           </div>
         </div>
 
-        {/* Playful Portal Badge */}
-        <div className="flex bg-white/20 px-5 py-2.5 rounded-full border border-white/30 shadow-inner text-white text-xs md:text-sm font-black select-none">
-          🎒 بَوَّابَةُ التِّلْمِيذِ الذَّكِيَّةِ
+        {/* Playful Portal Badge and Install Button */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setShowInstallPrompt(true);
+              playSound('click');
+            }}
+            className="flex items-center gap-1 bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs md:text-sm font-black px-4 py-2.5 rounded-full shadow-md border-2 border-white transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="تثبيت التطبيق على جهازك 📱"
+          >
+            <span>تثبيت التطبيق 📲</span>
+          </button>
+
+          <div className="hidden sm:flex bg-white/20 px-5 py-2.5 rounded-full border border-white/30 shadow-inner text-white text-xs md:text-sm font-black select-none">
+            🎒 بَوَّابَةُ التِّلْمِيذِ الذَّكِيَّةِ
+          </div>
         </div>
       </header>
 
@@ -804,6 +881,14 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Premium PWA Installation Overlay for Mobile Users */}
+      <PWAInstallPrompt
+        deferredPrompt={deferredPrompt}
+        setDeferredPrompt={setDeferredPrompt}
+        show={showInstallPrompt}
+        onClose={() => setShowInstallPrompt(false)}
+      />
     </div>
   );
 }
