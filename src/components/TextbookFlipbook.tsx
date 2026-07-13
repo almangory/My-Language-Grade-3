@@ -304,6 +304,11 @@ export default function TextbookFlipbook({ units, completedLessons, onSelectLess
     }
     
     setCurrentPageIndex(Math.max(0, Math.min(index, pages.length - 1)));
+
+    // Smoothly scroll the book container into view so the user can see the content immediately
+    setTimeout(() => {
+      bookContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   // Pointer event handlers for custom drag/swipe

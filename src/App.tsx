@@ -389,13 +389,28 @@ export default function App() {
     });
   };
 
-  // Scroll smoothly to the top of the screen when selecting a lesson, switching tabs, or going back
+  // Scroll smoothly to the active lesson workspace or top of the screen when selecting a lesson, switching tabs, or going back
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  }, [selectedLesson?.id, lessonSubTab]);
+    if (selectedLesson) {
+      const timer = setTimeout(() => {
+        const workspace = document.getElementById('active-lesson-workspace');
+        if (workspace) {
+          workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [selectedLesson?.id, lessonSubTab, mainTab]);
 
   const handleBackToDashboard = () => {
     const currentHistoryState = window.history.state;
@@ -653,7 +668,7 @@ export default function App() {
             />
           ) : (
             /* Active Lesson Interactive workspace */
-            <div className="flex flex-col gap-6 animate-fade-in">
+            <div id="active-lesson-workspace" className="flex flex-col gap-6 animate-fade-in">
               
               {/* Back button and Lesson Context */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-3xl border-2 border-yellow-border shadow-sm">
