@@ -85,6 +85,7 @@ export default function App() {
     }
   });
   const [showOfflinePanel, setShowOfflinePanel] = useState(false);
+  const [showGrammarCard, setShowGrammarCard] = useState<boolean>(false);
 
   // Track browser online status
   useEffect(() => {
@@ -659,7 +660,11 @@ export default function App() {
 
               {/* Conditional Sub Tab Panel Rendering */}
               {lessonSubTab === 'read' ? (
-                <LessonView lesson={selectedLesson} />
+                <LessonView 
+                  lesson={selectedLesson} 
+                  showGrammarCard={showGrammarCard}
+                  setShowGrammarCard={setShowGrammarCard}
+                />
               ) : (
                 <ExerciseView 
                   lesson={selectedLesson} 
@@ -675,6 +680,7 @@ export default function App() {
                       onClick={() => {
                         setSelectedLesson(prevLesson);
                         setLessonSubTab('read');
+                        setShowGrammarCard(false);
                         playSound('click');
                       }}
                       className="flex items-center gap-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs md:text-sm rounded-2xl border-2 border-slate-200 transition-all active:scale-95 cursor-pointer"
@@ -688,11 +694,35 @@ export default function App() {
                     <div /> // Spacer
                   )}
 
+                  {/* Middle Grammar Bulb Button */}
+                  {selectedLesson.grammarRule ? (
+                    <button
+                      onClick={() => {
+                        setShowGrammarCard(!showGrammarCard);
+                        try { playSound('click'); } catch(e){}
+                      }}
+                      className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs md:text-sm border-2 transition-all active:scale-95 cursor-pointer shadow-md hover:shadow-lg ${
+                        showGrammarCard
+                          ? 'bg-amber-500 text-white border-amber-600'
+                          : 'bg-white text-amber-600 border-amber-400 hover:bg-amber-50 animate-bounce'
+                      }`}
+                      style={{ animationDuration: '4s' }}
+                      title="مِصْبَاحُ الْقَوَاعِدِ 💡"
+                    >
+                      <span className="text-base">💡</span>
+                      <span className="hidden sm:inline">مِصْبَاحُ الْقَوَاعِدِ</span>
+                      <span className="sm:hidden">قواعد</span>
+                    </button>
+                  ) : (
+                    <div /> // Spacer to preserve symmetric layout centering
+                  )}
+
                   {nextLesson ? (
                     <button
                       onClick={() => {
                         setSelectedLesson(nextLesson);
                         setLessonSubTab('read');
+                        setShowGrammarCard(false);
                         playSound('click');
                       }}
                       className="flex items-center gap-2 px-6 py-3 bg-coral hover:bg-opacity-90 text-white font-black text-xs md:text-sm rounded-2xl transition-all active:scale-95 cursor-pointer shadow-md hover:shadow-lg animate-pulse"
