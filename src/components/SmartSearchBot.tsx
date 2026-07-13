@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Mic, MicOff, Volume2, VolumeX, X, HelpCircle, ArrowRight, MessageSquare, AlertCircle } from 'lucide-react';
 import { playSound } from '../utils';
+import { INITIAL_UNITS } from '../data';
 
 // Pre-defined kid-friendly Q&A Knowledge Base
 interface QAItem {
@@ -10,6 +11,16 @@ interface QAItem {
 }
 
 const KNOWLEDGE_BASE: QAItem[] = [
+  {
+    keywords: ["موجود", "الموجودات", "وجود", "موجوده", "هل يوجد"],
+    question: "هل كل الدروس والكلمات موجودة في المنهج؟",
+    answer: "نعم يا بطل! كل الدروس الرائعة، الكلمات الجديدة والمفردات، القواعد اللغوية والتمارين التفاعلية موجودة بالكامل في موقعنا المنهجي المصمم خصيصاً لك لتستمتع وتتعلم لغة الضاد الجميلة!"
+  },
+  {
+    keywords: ["زدني", "زدني علما", "العلم", "زدنا"],
+    question: "ما معنى (وَقُل رَّبِّ زِدْنِي عِلْمًا)؟",
+    answer: "هذه آية كريمة عظيمة يا بطل! وتعني أن نطلب من الله سبحانه وتعالى دائماً أن يزيدنا من العلم والمعرفة النافعة، لأن العلم ينور عقولنا ويجعلنا متفوقين وناجحين!"
+  },
   {
     keywords: ["بر الوالدين", "حب الوالدين", "أبي وأمي", "الوالدين", "طاعة"],
     question: "ما معنى بِرّ الوالِدَين وكيف نحترمهما؟",
@@ -206,40 +217,57 @@ export default function SmartSearchBot() {
     }
   };
 
-  // Search Logic based on Keyword & Substring overlap scoring
+  // Search Logic based on Keyword & Substring overlap scoring, with full website curriculum fallback
   const handleBotSearch = (query: string) => {
     if (!query.trim()) return;
 
     // Standardize Arabic characters for robust matching (remove accents / tashkeel and unify letters)
     const normalizeArabic = (text: string) => {
+      if (!text) return "";
       return text
         .replace(/[\u064B-\u0652]/g, "") // Remove tashkeel (fatha, damma, etc.)
         .replace(/[أإآ]/g, "ا")
         .replace(/ة/g, "ه")
-        .replace(/ى/g, "ي");
+        .replace(/ى/g, "ي")
+        .toLowerCase()
+        .trim();
     };
 
-    const normQuery = normalizeArabic(query.toLowerCase());
+    const normQuery = normalizeArabic(query);
+    if (normQuery.length < 2) {
+      setAnswerResult("يرجى كتابة كلمة كاملة أو سؤال واضح يا بطل لأستطيع مساعدتك بشكل أفضل! 📚");
+      return;
+    }
     
     let bestMatch: QAItem | null = null;
     let highestScore = 0;
 
+    // 1. First, check pre-defined KNOWLEDGE_BASE for quick definitions/Q&A
     KNOWLEDGE_BASE.forEach(item => {
       let score = 0;
       
-      // Match words
+      // Match keywords
       item.keywords.forEach(keyword => {
-        const normKeyword = normalizeArabic(keyword.toLowerCase());
-        if (normQuery.includes(normKeyword)) {
-          score += 3; // Direct keyword match
+        const normKeyword = normalizeArabic(keyword);
+        if (normQuery === normKeyword) {
+          score += 10; // Exact keyword match
+        } else if (normQuery.includes(normKeyword) || normKeyword.includes(normQuery)) {
+          score += 5; // Substring keyword match
         }
       });
 
       // Match parts of the question
-      const normQuestion = normalizeArabic(item.question.toLowerCase());
-      if (normQuestion.split(' ').some(word => word.length > 2 && normQuery.includes(word))) {
-        score += 1;
+      const normQuestion = normalizeArabic(item.question);
+      if (normQuestion.includes(normQuery)) {
+        score += 4;
       }
+      
+      const queryWords = normQuery.split(/\s+/).filter(w => w.length > 2);
+      queryWords.forEach(word => {
+        if (normQuestion.includes(word)) {
+          score += 2;
+        }
+      });
 
       if (score > highestScore) {
         highestScore = score;
@@ -247,16 +275,243 @@ export default function SmartSearchBot() {
       }
     });
 
+    // 2. Scan the ENTIRE website content (INITIAL_UNITS) to see if we find matches!
+    interface SearchMatch {
+      type: 'word' | 'content' | 'stanza' | 'grammar' | 'exercise' | 'title';
+      unitTitle: string;
+      lessonTitle: string;
+      lessonId: string;
+      contextText: string;
+    }
+
+    const matches: SearchMatch[] = [];
+
+    INITIAL_UNITS.forEach(unit => {
+      unit.lessons.forEach(lesson => {
+        // A. Title match
+        if (normalizeArabic(lesson.title).includes(normQuery)) {
+          matches.push({
+            type: 'title',
+            unitTitle: unit.title,
+            lessonTitle: lesson.title,
+            lessonId: lesson.id,
+            contextText: `عنوان الدرس: ${lesson.title}`
+          });
+        }
+
+        // B. New Words match
+        if (lesson.newWords) {
+          lesson.newWords.forEach(word => {
+            if (normalizeArabic(word).includes(normQuery)) {
+              matches.push({
+                type: 'word',
+                unitTitle: unit.title,
+                lessonTitle: lesson.title,
+                lessonId: lesson.id,
+                contextText: `كلمة جديدة: ${word}`
+              });
+            }
+          });
+        }
+
+        // C. Content match
+        if (lesson.content) {
+          const normContent = normalizeArabic(lesson.content);
+          if (normContent.includes(normQuery)) {
+            // Find a sentence that contains the query
+            const sentences = lesson.content.split(/[.\n،؟!]/);
+            let matchedSentence = '';
+            for (const sentence of sentences) {
+              if (normalizeArabic(sentence).includes(normQuery)) {
+                matchedSentence = sentence.trim();
+                break;
+              }
+            }
+            matches.push({
+              type: 'content',
+              unitTitle: unit.title,
+              lessonTitle: lesson.title,
+              lessonId: lesson.id,
+              contextText: matchedSentence || (lesson.content.substring(0, 100) + '...')
+            });
+          }
+        }
+
+        // D. Stanzas (Poems) match
+        if (lesson.stanzas) {
+          lesson.stanzas.forEach(stanza => {
+            const h1 = stanza.hemistich1 || '';
+            const h2 = stanza.hemistich2 || '';
+            if (normalizeArabic(h1).includes(normQuery) || normalizeArabic(h2).includes(normQuery)) {
+              matches.push({
+                type: 'stanza',
+                unitTitle: unit.title,
+                lessonTitle: lesson.title,
+                lessonId: lesson.id,
+                contextText: `بيت شعر: "${h1} * ${h2}"`
+              });
+            }
+          });
+        }
+
+        // E. Grammar rule match
+        if (lesson.grammarRule) {
+          const rule = lesson.grammarRule;
+          if (normalizeArabic(rule.title).includes(normQuery) || 
+              normalizeArabic(rule.ruleText).includes(normQuery) || 
+              normalizeArabic(rule.explanation).includes(normQuery)) {
+            matches.push({
+              type: 'grammar',
+              unitTitle: unit.title,
+              lessonTitle: lesson.title,
+              lessonId: lesson.id,
+              contextText: `قاعدة نحوية (${rule.title}): ${rule.ruleText}`
+            });
+          } else if (rule.examples) {
+            rule.examples.forEach(ex => {
+              if (normalizeArabic(ex.word).includes(normQuery) || normalizeArabic(ex.explanation).includes(normQuery)) {
+                matches.push({
+                  type: 'grammar',
+                  unitTitle: unit.title,
+                  lessonTitle: lesson.title,
+                  lessonId: lesson.id,
+                  contextText: `مثال لقاعدة نحوية: الكلمة "${ex.word}" (${ex.explanation})`
+                });
+              }
+            });
+          }
+        }
+
+        // F. Exercise/Question match
+        if (lesson.questions) {
+          lesson.questions.forEach(q => {
+            let matchedQ = false;
+            let detail = q.instruction;
+            if (normalizeArabic(q.instruction).includes(normQuery)) {
+              matchedQ = true;
+            } else if (q.options) {
+              q.options.forEach(opt => {
+                if (normalizeArabic(opt).includes(normQuery)) {
+                  matchedQ = true;
+                  detail = `${q.instruction} (الخيارات: ${opt})`;
+                }
+              });
+            } else if (q.matchingPairs) {
+              q.matchingPairs.forEach(p => {
+                if (normalizeArabic(p.source).includes(normQuery) || normalizeArabic(p.target).includes(normQuery)) {
+                  matchedQ = true;
+                  detail = `${q.instruction} (${p.source} ↔ ${p.target})`;
+                }
+              });
+            }
+
+            if (matchedQ) {
+              matches.push({
+                type: 'exercise',
+                unitTitle: unit.title,
+                lessonTitle: lesson.title,
+                lessonId: lesson.id,
+                contextText: `سؤال تفاعلي: "${detail.substring(0, 70)}..."`
+              });
+            }
+          });
+        }
+      });
+    });
+
     let finalAnswer = '';
-    if (highestScore > 0 && bestMatch) {
+
+    // If we have direct matches in the curriculum (INITIAL_UNITS)
+    if (matches.length > 0) {
+      playSound('success');
+      
+      // Select top 3 unique matches to avoid overwhelming the child
+      const uniqueMatches: SearchMatch[] = [];
+      const seenLessons = new Set<string>();
+      
+      for (const m of matches) {
+        const key = `${m.lessonId}-${m.type}`;
+        if (!seenLessons.has(key)) {
+          seenLessons.add(key);
+          uniqueMatches.push(m);
+        }
+        if (uniqueMatches.length >= 3) break;
+      }
+
+      // If there is also a definition in the knowledge base, prefer it and attach matches
+      if (highestScore >= 3 && bestMatch) {
+        finalAnswer = `نعم يا بطل! لقد وجدت كلمة "${query}" وهي موجودة في المنهج، ومعناها الجميل هو:\n« ${(bestMatch as QAItem).answer} »\n\n` + 
+          `وقد وردت هذه الكلمة أيضاً في المواضع التالية بالمنهج:\n` + 
+          uniqueMatches.map((m, idx) => `📍 في درس **${m.lessonTitle}**: ${m.contextText}`).join('\n') +
+          `\n\nأنت بطل رائع يسأل ويبحث دائماً عن العلم! 🌟`;
+      } else {
+        let answerIntro = `أهلاً بك يا بطل! لقد بحثتُ في كامل محتويات الموقع ومنهج لغة الضاد للصف الثالث، ووجدتُ كلمة "${query}" موجودة بالفعل في المنهج! 🎉\n\nإليك أين وردت بالتفصيل:\n\n`;
+        
+        const matchLines = uniqueMatches.map((m, idx) => {
+          let typeLabel = '';
+          if (m.type === 'title') typeLabel = 'عنوان الدرس';
+          else if (m.type === 'word') typeLabel = 'المفردات والكلمات الجديدة';
+          else if (m.type === 'content') typeLabel = 'نص القراءة';
+          else if (m.type === 'stanza') typeLabel = 'شعر النشيد';
+          else if (m.type === 'grammar') typeLabel = 'القواعد اللغوية والهمزات';
+          else if (m.type === 'exercise') typeLabel = 'التمارين والأسئلة التفاعلية';
+
+          return `${idx + 1}. في **${m.lessonTitle}** (${m.unitTitle}) - [${typeLabel}]:\n   « ${m.contextText} »`;
+        });
+
+        finalAnswer = answerIntro + matchLines.join('\n\n') + `\n\nما رأيك أن تذهب الآن إلى درس **${uniqueMatches[0].lessonTitle}** لتقرأه وتتدرب عليه؟ أنت بطل رائع ومجتهد! 🌟`;
+      }
+    } 
+    // If no exact curriculum matches, but we have a knowledge base match
+    else if (highestScore >= 3 && bestMatch) {
+      playSound('success');
       finalAnswer = (bestMatch as QAItem).answer;
-    } else {
-      finalAnswer = "سؤال جميل يا ذكي! لم أجد هذه الكلمة بالتحديد في المعجم المنهجي الحالي، ولكن تذكر دائماً أن بر الوالدين، والنظافة، والغذاء الصحي، والاجتهاد في طلب العلم هي أهم مفاتيح النجاح للبطل الصغير!";
+    } 
+    // Fallback: If nothing is found, search words inside our query to be extremely helpful
+    else {
+      const words = normQuery.split(/\s+/).filter(w => w.length >= 3);
+      let partialMatch: SearchMatch | null = null;
+      
+      for (const word of words) {
+        for (const unit of INITIAL_UNITS) {
+          for (const lesson of unit.lessons) {
+            if (normalizeArabic(lesson.title).includes(word)) {
+              partialMatch = {
+                type: 'title',
+                unitTitle: unit.title,
+                lessonTitle: lesson.title,
+                lessonId: lesson.id,
+                contextText: `درس بعنوان: ${lesson.title}`
+              };
+              break;
+            }
+            if (lesson.newWords && lesson.newWords.some(nw => normalizeArabic(nw).includes(word))) {
+              const matchedWord = lesson.newWords.find(nw => normalizeArabic(nw).includes(word));
+              partialMatch = {
+                type: 'word',
+                unitTitle: unit.title,
+                lessonTitle: lesson.title,
+                lessonId: lesson.id,
+                contextText: `الكلمة الجديدة: ${matchedWord}`
+              };
+              break;
+            }
+          }
+          if (partialMatch) break;
+        }
+        if (partialMatch) break;
+      }
+
+      if (partialMatch) {
+        playSound('success');
+        finalAnswer = `لم أجد جملة كاملة مطابقة تماماً لسؤالك، ولكن وجدت ما يتعلق به في درس **${partialMatch.lessonTitle}** (${partialMatch.unitTitle})! \n\nأنصحك بالاطلاع على هذا الدرس الشيق يا بطل لتجد كل ما تبحث عنه! 🌟`;
+      } else {
+        finalAnswer = `سؤال رائع يا ذكي! كلمة "${query}" لم أجدها مسجلة بشكل مباشر في دروس الصف الثالث المنهجية، ولكن موقعنا الرائع مليء بالدروس والقصص والأناشيد الجميلة جداً. جرّب أن تبحث عن كلمة أخرى مثل: "بر الوالدين"، "الفرخ السعيد"، "العيش الشريف"، "النظافة"، أو "السودان"!`;
+      }
     }
 
     setAnswerResult(finalAnswer);
     speakText(finalAnswer);
-    playSound('success');
   };
 
   const startListening = () => {
@@ -400,17 +655,22 @@ export default function SmartSearchBot() {
           <div className="p-3 bg-white border-t border-slate-100 flex flex-col gap-2">
             <div className="flex items-center gap-2">
               {/* Mic STT button */}
-              <button
-                onClick={startListening}
-                className={`p-3 rounded-full transition-all flex items-center justify-center cursor-pointer shadow-sm ${
-                  isListening 
-                    ? 'bg-rose-500 text-white animate-pulse scale-105' 
-                    : 'bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-600'
-                }`}
-                title={isListening ? 'جاري الاستماع... اضغط للإيقاف' : 'اضغط للتحدث بالصوت 🎙️'}
-              >
-                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              </button>
+              <div className="relative shrink-0">
+                {isListening && (
+                  <span className="absolute inset-0 rounded-full bg-rose-500/40 animate-ping" />
+                )}
+                <button
+                  onClick={startListening}
+                  className={`relative p-3 rounded-full transition-all flex items-center justify-center cursor-pointer shadow-sm z-10 ${
+                    isListening 
+                      ? 'bg-rose-500 text-white scale-110' 
+                      : 'bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-600'
+                  }`}
+                  title={isListening ? 'جاري الاستماع... اضغط للإيقاف' : 'اضغط للتحدث بالصوت 🎙️'}
+                >
+                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </button>
+              </div>
 
               {/* Text Input */}
               <div className="flex-1 relative">

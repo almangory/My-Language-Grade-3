@@ -205,15 +205,18 @@ export default function AudioPlayer({ textToRead, title, lessonId, audioUrl, onB
 
       const onPlay = () => {
         setFileIsPlaying(true);
+        if (onStart) onStart();
       };
 
       const onPause = () => {
         setFileIsPlaying(false);
+        if (onEnd) onEnd();
       };
 
       const onEnded = () => {
         setFileIsPlaying(false);
         setFileCurrentTime(0);
+        if (onEnd) onEnd();
       };
 
       const onError = () => {
@@ -271,15 +274,18 @@ export default function AudioPlayer({ textToRead, title, lessonId, audioUrl, onB
 
       const onPlay = () => {
         setUserIsPlaying(true);
+        if (onStart) onStart();
       };
 
       const onPause = () => {
         setUserIsPlaying(false);
+        if (onEnd) onEnd();
       };
 
       const onEnded = () => {
         setUserIsPlaying(false);
         setUserCurrentTime(0);
+        if (onEnd) onEnd();
       };
 
       audio.addEventListener('loadedmetadata', onLoadedMetadata);
@@ -372,6 +378,7 @@ export default function AudioPlayer({ textToRead, title, lessonId, audioUrl, onB
       synthRef.current.pause();
       setIsPlaying(false);
       setIsPaused(true);
+      if (onEnd) onEnd();
       playSound('click');
     }
   };

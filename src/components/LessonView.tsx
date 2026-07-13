@@ -382,8 +382,25 @@ export default function LessonView({
   const [activeCharIndex, setActiveCharIndex] = React.useState<number>(-1);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [showAudioPlayer, setShowAudioPlayer] = useState<boolean>(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
+  const [isAudioMinimized, setIsAudioMinimized] = useState<boolean>(false);
   const [localShowGrammarCard, setLocalShowGrammarCard] = useState<boolean>(false);
   const [isLessonFullscreen, setIsLessonFullscreen] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isLessonFullscreen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = '';
+      }
+    };
+  }, [isLessonFullscreen]);
 
   const showGrammarCard = externalShowGrammarCard !== undefined ? externalShowGrammarCard : localShowGrammarCard;
   const setShowGrammarCard = externalSetShowGrammarCard !== undefined ? externalSetShowGrammarCard : setLocalShowGrammarCard;
@@ -631,58 +648,12 @@ export default function LessonView({
     };
   }) || [];
 
-  return (
-    <div className="flex flex-col gap-6 select-text text-charcoal">
-      {/* Playful Header */}
-      <div className="flex flex-col gap-3 bg-white p-6 rounded-[32px] border-2 border-yellow-border relative overflow-hidden shadow-sm">
-        {/* Playful absolute accents */}
-        <div className="absolute top-2 left-2 text-coral/10 transform rotate-12">
-          <BookOpen className="w-16 h-16" />
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {lesson.type === LessonType.Poem ? (
-            <span className="bg-yellow-accent text-coral px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1 shadow-sm border border-yellow-border animate-bounce">
-              <Music className="w-3.5 h-3.5" />
-              نشيد ملون وعذب 🎵
-            </span>
-          ) : (
-            <span className="bg-teal-accent text-white px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
-              <BookOpen className="w-3.5 h-3.5" />
-              قراءة ومفردات 📖
-            </span>
-          )}
-        </div>
-
-        <h2 className="text-2xl md:text-3xl font-black text-charcoal tracking-tight leading-relaxed">
-          {lesson.title}
-        </h2>
-
-        {/* New words shelf */}
-        {lesson.newWords && lesson.newWords.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-black text-coral bg-cream px-3 py-1.5 rounded-xl border border-yellow-border shadow-sm">
-              الكلمات الجديدة ✨ (اضغط لقراءتها):
-            </span>
-            {lesson.newWords.map((word, index) => (
-              <span
-                key={index}
-                className="bg-white px-3.5 py-1 rounded-full text-xs font-black text-charcoal border-2 border-yellow-border shadow-sm hover:scale-105 hover:bg-cream/40 transition-all duration-150 cursor-pointer"
-                title="اضغط للاستماع للكلمة"
-                onClick={() => speakWord(word)}
-              >
-                {word} 🔊
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Lesson Body Sheet (Simulating an editable Interactive PDF book leaf) */}
-      <div className={`transition-all duration-300 relative ${
+  const renderLessonBody = () => {
+    return (
+      <div className={`transition-all duration-300 ${
         isLessonFullscreen
-          ? 'fixed inset-0 z-[100] overflow-y-auto p-6 md:p-12 rounded-none border-none shadow-none'
-          : 'rounded-[40px] p-6 md:p-10 shadow-lg border-2'
+          ? 'fixed inset-0 z-[99999] overflow-y-auto p-6 md:p-12 rounded-none border-none shadow-none'
+          : 'relative rounded-[40px] p-6 md:p-10 shadow-lg border-2'
       } ${
         readingMode === 'standard'
           ? 'bg-white border-yellow-border text-charcoal'
@@ -1080,6 +1051,59 @@ export default function LessonView({
           </div>
         </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-6 select-text text-charcoal">
+      {/* Playful Header */}
+      <div className="flex flex-col gap-3 bg-white p-6 rounded-[32px] border-2 border-yellow-border relative overflow-hidden shadow-sm">
+        {/* Playful absolute accents */}
+        <div className="absolute top-2 left-2 text-coral/10 transform rotate-12">
+          <BookOpen className="w-16 h-16" />
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {lesson.type === LessonType.Poem ? (
+            <span className="bg-yellow-accent text-coral px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1 shadow-sm border border-yellow-border animate-bounce">
+              <Music className="w-3.5 h-3.5" />
+              نشيد ملون وعذب 🎵
+            </span>
+          ) : (
+            <span className="bg-teal-accent text-white px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
+              <BookOpen className="w-3.5 h-3.5" />
+              قراءة ومفردات 📖
+            </span>
+          )}
+        </div>
+
+        <h2 className="text-2xl md:text-3xl font-black text-charcoal tracking-tight leading-relaxed">
+          {lesson.title}
+        </h2>
+
+        {/* New words shelf */}
+        {lesson.newWords && lesson.newWords.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-black text-coral bg-cream px-3 py-1.5 rounded-xl border border-yellow-border shadow-sm">
+              الكلمات الجديدة ✨ (اضغط لقراءتها):
+            </span>
+            {lesson.newWords.map((word, index) => (
+              <span
+                key={index}
+                className="bg-white px-3.5 py-1 rounded-full text-xs font-black text-charcoal border-2 border-yellow-border shadow-sm hover:scale-105 hover:bg-cream/40 transition-all duration-150 cursor-pointer"
+                title="اضغط للاستماع للكلمة"
+                onClick={() => speakWord(word)}
+              >
+                {word} 🔊
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {isLessonFullscreen && typeof document !== 'undefined'
+        ? createPortal(renderLessonBody(), document.body)
+        : renderLessonBody()}
 
       {/* Fullscreen Image Overlay */}
       <AnimatePresence>
@@ -1126,45 +1150,109 @@ export default function LessonView({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 280 }}
-            className="fixed bottom-44 right-4 left-4 sm:left-auto sm:right-6 md:right-12 z-40 max-w-full sm:w-[500px] bg-white rounded-[32px] border-4 border-[#FFD93D] shadow-2xl p-5"
+            className={`fixed ${isLessonFullscreen ? 'z-[100000]' : 'z-40'} transition-all duration-300 ${
+              isAudioMinimized 
+                ? 'bottom-24 left-4 right-4 sm:left-auto sm:right-6 md:right-12 w-[calc(100%-2rem)] sm:w-[320px] bg-teal-500 border-4 border-yellow-accent rounded-full py-2.5 px-4 flex items-center justify-between text-white shadow-2xl'
+                : 'bottom-44 right-4 left-4 sm:left-auto sm:right-6 md:right-12 max-w-full sm:w-[500px] bg-white rounded-[32px] border-4 border-[#FFD93D] shadow-2xl p-5'
+            }`}
             dir="rtl"
           >
-            {/* Header of the floating box */}
-            <div className="flex items-center justify-between border-b-2 border-dashed border-slate-100 pb-3 mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🤖</span>
-                <span className="text-xs font-black text-coral bg-cream px-2.5 py-1 rounded-full border border-yellow-border">
-                  مُسَاعِدُ الْقِرَاءَةِ الذَّكِيِّ
-                </span>
+            {isAudioMinimized ? (
+              <div className="flex items-center justify-between w-full gap-3 select-none">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl animate-bounce">🔊</span>
+                  <div className="text-right">
+                    <p className="text-[10px] text-teal-100 font-extrabold leading-tight">جاري الاستماع للدرس... 📖</p>
+                    <p className="text-xs text-white font-black leading-tight max-w-[140px] truncate">{lesson.title}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => {
+                      setIsAudioMinimized(false);
+                      try { playSound('click'); } catch(e){}
+                    }}
+                    className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-black transition-colors cursor-pointer"
+                    title="عرض أزرار التحكم بالصوت ⚙️"
+                  >
+                    عرض التحكم ⚙️
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAudioPlayer(false);
+                      setIsAudioPlaying(false);
+                      setIsAudioMinimized(false);
+                      try { playSound('click'); } catch(e){}
+                    }}
+                    className="p-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black transition-colors cursor-pointer"
+                    title="إغلاق وإيقاف الصوت ❌"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => {
-                  setShowAudioPlayer(false);
-                  try { playSound('click'); } catch(e){}
-                }}
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all cursor-pointer border border-transparent hover:border-slate-200 active:scale-95"
-                title="إغلاق الصندوق ❌"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            ) : (
+              <>
+                {/* Header of the floating box */}
+                <div className="flex items-center justify-between border-b-2 border-dashed border-slate-100 pb-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🤖</span>
+                    <span className="text-xs font-black text-coral bg-cream px-2.5 py-1 rounded-full border border-yellow-border">
+                      مُسَاعِدُ الْقِرَاءَةِ الذَّكِيِّ
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {isAudioPlaying && (
+                      <button
+                        onClick={() => {
+                          setIsAudioMinimized(true);
+                          try { playSound('click'); } catch(e){}
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-[10px] font-black transition cursor-pointer border border-teal-200"
+                        title="تصغير لتتبع القراءة ↘️"
+                      >
+                        تصغير لتتبع النص ↘️
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setShowAudioPlayer(false);
+                        try { playSound('click'); } catch(e){}
+                      }}
+                      className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all cursor-pointer border border-transparent hover:border-slate-200 active:scale-95"
+                      title="إغلاق الصندوق ❌"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
 
-            {/* AudioPlayer inside the box */}
-            <div className="max-h-[380px] overflow-y-auto pr-1">
-              <AudioPlayer 
-                textToRead={getFullTextForReading()} 
-                title={lesson.title} 
-                lessonId={lesson.id}
-                audioUrl={lesson.audioUrl}
-                onBoundary={setActiveCharIndex}
-                onEnd={() => setActiveCharIndex(-1)}
-                onStart={() => setActiveCharIndex(-1)}
-              />
-            </div>
-            
-            <p className="text-center text-[10px] font-bold text-slate-400 mt-3 leading-normal">
-              💡 يمكنك استماع القراءة أثناء تصفح الدرس وقراءة الكلمات المضيئة!
-            </p>
+                {/* AudioPlayer inside the box */}
+                <div className="max-h-[380px] overflow-y-auto pr-1">
+                  <AudioPlayer 
+                    textToRead={getFullTextForReading()} 
+                    title={lesson.title} 
+                    lessonId={lesson.id}
+                    audioUrl={lesson.audioUrl}
+                    onBoundary={setActiveCharIndex}
+                    onEnd={() => {
+                      setActiveCharIndex(-1);
+                      setIsAudioPlaying(false);
+                      setIsAudioMinimized(false);
+                    }}
+                    onStart={() => {
+                      setActiveCharIndex(-1);
+                      setIsAudioPlaying(true);
+                      setIsAudioMinimized(true); // Auto minimize to prevent blockage
+                    }}
+                  />
+                </div>
+                
+                <p className="text-center text-[10px] font-bold text-slate-400 mt-3 leading-normal">
+                  💡 يمكنك استماع القراءة أثناء تصفح الدرس وقراءة الكلمات المضيئة!
+                </p>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1177,7 +1265,7 @@ export default function LessonView({
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className={`fixed bottom-24 right-6 md:right-12 z-50 flex items-center justify-center gap-2.5 px-5 py-4 rounded-full shadow-2xl transition-all duration-300 border-3 border-white ${
+        className={`fixed bottom-24 right-6 md:right-12 ${isLessonFullscreen ? 'z-[100000]' : 'z-50'} flex items-center justify-center gap-2.5 px-5 py-4 rounded-full shadow-2xl transition-all duration-300 border-3 border-white ${
           showAudioPlayer
             ? 'bg-[#FF6F61] text-white hover:bg-[#FF6F61]/90 shadow-rose-500/30'
             : 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white animate-bounce shadow-emerald-500/30'
@@ -1198,7 +1286,7 @@ export default function LessonView({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" 
+              className={`fixed inset-0 ${isLessonFullscreen ? 'z-[100001]' : 'z-[9999]'} flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm`} 
               dir="rtl"
             >
               <motion.div
@@ -1242,7 +1330,7 @@ export default function LessonView({
           }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          className={`fixed bottom-40 right-6 md:right-12 z-50 flex items-center justify-center gap-2.5 px-5 py-4 rounded-full shadow-2xl transition-all duration-300 border-3 border-white ${
+          className={`fixed bottom-40 right-6 md:right-12 ${isLessonFullscreen ? 'z-[100000]' : 'z-50'} flex items-center justify-center gap-2.5 px-5 py-4 rounded-full shadow-2xl transition-all duration-300 border-3 border-white ${
             showGrammarCard
               ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/30'
               : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white animate-bounce shadow-amber-500/30'

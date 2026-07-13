@@ -41,3 +41,37 @@
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* Mobile & Touch Optimizations */
+* {
+  -webkit-tap-highlight-color: transparent;
+  outline-color: transparent;
+}
+
+/* Disable double-tap zoom on buttons and interactive elements for instant click response */
+button, a, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
+}
+
+/* Momentum scrolling for all overflow scroll zones on mobile */
+.overflow-y-auto, .overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* App-like user selection behavior */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.select-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Highly responsive tactile scale feedback on tap */
+.active-scale:active {
+  transform: scale(0.96);
+  transition: transform 0.05s ease-out;
+}
+
+
