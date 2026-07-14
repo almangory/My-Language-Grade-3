@@ -374,6 +374,7 @@ export const INITIAL_UNITS: Unit[] = [
         "unitId": "unit-2",
         "title": "الدرس الأول: العَوْدَةُ إِلَى المَدْرَسَةِ",
         "type": LessonType.Poem,
+        "videoUrl": "https://youtu.be/4OA_ZFmr-bs?si=lS5qB26XxXzIW4S4",
         "newWords": [
           "ما أبهاك",
           "مجداً",
