@@ -346,7 +346,7 @@ export default function App() {
   // Load curriculum and progress from LocalStorage
   useEffect(() => {
     // 1. Units & Lessons
-    const savedUnits = localStorage.getItem('sudanese_arabic_units_v_final_preload_v10_textbook_sync');
+    const savedUnits = localStorage.getItem('sudanese_arabic_units_v_final_preload_v12_textbook_sync');
     if (savedUnits) {
       try {
         setUnits(JSON.parse(savedUnits));
@@ -355,7 +355,7 @@ export default function App() {
       }
     } else {
       setUnits(INITIAL_UNITS);
-      localStorage.setItem('sudanese_arabic_units_v_final_preload_v10_textbook_sync', JSON.stringify(INITIAL_UNITS));
+      localStorage.setItem('sudanese_arabic_units_v_final_preload_v12_textbook_sync', JSON.stringify(INITIAL_UNITS));
     }
 
     // 2. Completed lessons & score

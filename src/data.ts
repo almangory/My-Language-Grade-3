@@ -95,6 +95,7 @@ export const INITIAL_UNITS: Unit[] = [
         "unitId": "unit-1",
         "title": "الدرس الثاني: نشيد (أَبِي وَأُمِّي)",
         "type": LessonType.Poem,
+        "videoUrl": "https://youtu.be/MUqNhVc4CTI?si=bxpFanchUZvaKxZx",
         "newWords": [
           "دَوْماً",
           "فَضْلِهَا",

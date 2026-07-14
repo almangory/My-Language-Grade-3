@@ -374,6 +374,49 @@ function tokenizeText(text: string): TextToken[] {
   return tokens;
 }
 
+// Helper to extract proper Embed URL from YouTube or Google Drive links for our interactive player
+function getEmbedUrl(url?: string): string | null {
+  if (!url) return null;
+  
+  // YouTube checks
+  if (url.includes('youtu.be/')) {
+    const parts = url.split('youtu.be/');
+    if (parts[1]) {
+      const videoId = parts[1].split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+  }
+  if (url.includes('youtube.com/watch')) {
+    try {
+      const urlObj = new URL(url);
+      const videoId = urlObj.searchParams.get('v');
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    } catch (e) {
+      const parts = url.split('v=');
+      if (parts[1]) {
+        const videoId = parts[1].split('&')[0];
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    }
+  }
+  if (url.includes('youtube.com/embed/')) {
+    return url;
+  }
+  
+  // Google Drive checks
+  if (url.includes('drive.google.com/file/d/')) {
+    const parts = url.split('drive.google.com/file/d/');
+    if (parts[1]) {
+      const fileId = parts[1].split('/')[0];
+      return `https://drive.google.com/file/d/${fileId}/preview`;
+    }
+  }
+  
+  return null;
+}
+
 export default function LessonView({ 
   lesson,
   showGrammarCard: externalShowGrammarCard,
@@ -386,6 +429,15 @@ export default function LessonView({
   const [isAudioMinimized, setIsAudioMinimized] = useState<boolean>(false);
   const [localShowGrammarCard, setLocalShowGrammarCard] = useState<boolean>(false);
   const [isLessonFullscreen, setIsLessonFullscreen] = useState<boolean>(false);
+  const [activeMediaTab, setActiveMediaTab] = useState<'image' | 'video'>(lesson.videoUrl ? 'video' : 'image');
+
+  // Reset tab and player on lesson change
+  React.useEffect(() => {
+    setActiveMediaTab(lesson.videoUrl ? 'video' : 'image');
+    setActiveCharIndex(-1);
+    setIsAudioPlaying(false);
+    setIsAudioMinimized(false);
+  }, [lesson.id]);
 
   React.useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -941,30 +993,92 @@ export default function LessonView({
                 </div>
               )}
 
-              <div className="overflow-hidden rounded-2xl relative border border-yellow-border/30 shadow-inner group cursor-zoom-in">
-                <img 
-                  src={LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId]} 
-                  alt={lesson.title} 
-                  className="w-full h-auto aspect-[16/9] object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700 select-none"
-                  referrerPolicy="no-referrer"
-                  onClick={() => setFullScreenImage(LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId])}
-                />
-                
-                {/* Fullscreen Button overlay */}
-                <button
-                  onClick={() => setFullScreenImage(LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId])}
-                  className="absolute top-3 left-3 bg-white/95 hover:bg-white text-coral p-2 rounded-full border border-yellow-border/50 shadow transition active:scale-95 flex items-center gap-1.5 text-[10px] font-black cursor-pointer"
-                  title="عرض بملء الشاشة 📺"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                  <span>تكبير الصورة 🔍</span>
-                </button>
-
-                {/* Visual Label overlay */}
-                <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] md:text-xs font-black text-coral border border-yellow-border/50 shadow flex items-center gap-1">
-                  🎨 لوحة الدرس التوضيحية
+              {/* Media Selection Tabs if video is available */}
+              {lesson.videoUrl && (
+                <div className="flex justify-center gap-2 mb-4 border-b-2 border-dashed border-coral/20 pb-3 relative z-10">
+                  <button
+                    onClick={() => {
+                      setActiveMediaTab('image');
+                      try { playSound('click'); } catch(e){}
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer border-2 ${
+                      activeMediaTab === 'image'
+                        ? 'bg-coral text-white border-white shadow-md scale-105'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    🎨 الصورة التوضيحية
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveMediaTab('video');
+                      try { playSound('click'); } catch(e){}
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer border-2 ${
+                      activeMediaTab === 'video'
+                        ? 'bg-emerald-500 text-white border-white shadow-md scale-105 animate-pulse'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    🎬 تشغيل الفيديو 📺
+                  </button>
                 </div>
-              </div>
+              )}
+
+              {activeMediaTab === 'video' && lesson.videoUrl ? (
+                /* Interactive Video Player */
+                <div className="overflow-hidden rounded-2xl relative border border-yellow-border/30 shadow-inner bg-black aspect-[16/9] w-full">
+                  {getEmbedUrl(lesson.videoUrl) ? (
+                    <iframe
+                      src={getEmbedUrl(lesson.videoUrl)!}
+                      title={lesson.title}
+                      className="w-full h-full rounded-2xl border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-white p-6 text-center bg-slate-900 rounded-2xl">
+                      <span className="text-4xl mb-2">📹</span>
+                      <p className="font-extrabold text-sm text-yellow-400 mb-1">رابط الفيديو الخارجي (مثل جوجل درايف)</p>
+                      <p className="text-xs text-slate-300 max-w-md">يمكنك مشاهدة الفيديو مباشرة بالنقر أدناه للفتح في صفحة منفصلة:</p>
+                      <a
+                        href={lesson.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 px-6 py-2.5 bg-coral text-white font-black rounded-full hover:bg-coral/90 text-xs transition duration-200 shadow-md transform active:scale-95 inline-block"
+                      >
+                        اضغط لفتح وتشغيل الفيديو 🌐
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Original Image Display */
+                <div className="overflow-hidden rounded-2xl relative border border-yellow-border/30 shadow-inner group cursor-zoom-in">
+                  <img 
+                    src={LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId]} 
+                    alt={lesson.title} 
+                    className="w-full h-auto aspect-[16/9] object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700 select-none"
+                    referrerPolicy="no-referrer"
+                    onClick={() => setFullScreenImage(LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId])}
+                  />
+                  
+                  {/* Fullscreen Button overlay */}
+                  <button
+                    onClick={() => setFullScreenImage(LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId])}
+                    className="absolute top-3 left-3 bg-white/95 hover:bg-white text-coral p-2 rounded-full border border-yellow-border/50 shadow transition active:scale-95 flex items-center gap-1.5 text-[10px] font-black cursor-pointer"
+                    title="عرض بملء الشاشة 📺"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                    <span>تكبير الصورة 🔍</span>
+                  </button>
+
+                  {/* Visual Label overlay */}
+                  <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] md:text-xs font-black text-coral border border-yellow-border/50 shadow flex items-center gap-1">
+                    🎨 لوحة الدرس التوضيحية
+                  </div>
+                </div>
+              )}
 
               {/* Lesson Specific Description */}
               {LESSON_DETAILS[lesson.id] && (
@@ -972,7 +1086,7 @@ export default function LessonView({
                   readingMode === 'standard' 
                     ? 'bg-white border-yellow-border/30 text-slate-800' 
                     : readingMode === 'warm' 
-                    ? 'bg-[#FCF5E3] border-amber-300/40 text-[#4E3620]' 
+                    ? 'bg-[#FCF5E3] border-[#4A3D33]/40 text-[#4E3620]' 
                     : 'bg-[#1E1E1E] border-[#4A3D33]/40 text-[#D5C7B7]'
                 }`}>
                   <p className="font-extrabold text-xs md:text-sm flex flex-row-reverse items-center gap-2 justify-start leading-relaxed">
@@ -985,7 +1099,7 @@ export default function LessonView({
               <p className={`text-center font-bold text-[11px] md:text-xs mt-3 ${
                 readingMode === 'standard' ? 'text-slate-600' : readingMode === 'warm' ? 'text-[#6E553F]' : 'text-[#B2A394]'
               }`}>
-                🖼️ رسمة توضيحية لدرس: <span className="text-coral underline font-black">{lesson.title}</span>
+                {activeMediaTab === 'video' ? '📺 الفيديو التعليمي لدرس:' : '🖼️ رسمة توضيحية لدرس:'} <span className="text-coral underline font-black">{lesson.title}</span>
               </p>
             </div>
           </div>

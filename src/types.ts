@@ -51,6 +51,7 @@ export interface Lesson {
   questions: Question[];
   audioUrl?: string; // Optional predefined, else we use TTS
   grammarRule?: GrammarRule; // Optional grammar rule for the lesson
+  videoUrl?: string; // Optional video/media URL (e.g. YouTube, Google Drive)
 }
 
 export interface Unit {
