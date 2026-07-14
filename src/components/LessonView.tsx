@@ -383,7 +383,7 @@ function getEmbedUrl(url?: string): string | null {
     const parts = url.split('youtu.be/');
     if (parts[1]) {
       const videoId = parts[1].split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}`;
+      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
     }
   }
   if (url.includes('youtube.com/watch')) {
@@ -391,18 +391,18 @@ function getEmbedUrl(url?: string): string | null {
       const urlObj = new URL(url);
       const videoId = urlObj.searchParams.get('v');
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
+        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
       }
     } catch (e) {
       const parts = url.split('v=');
       if (parts[1]) {
         const videoId = parts[1].split('&')[0];
-        return `https://www.youtube.com/embed/${videoId}`;
+        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
       }
     }
   }
   if (url.includes('youtube.com/embed/')) {
-    return url;
+    return url.includes('?') ? url : `${url}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
   }
   
   // Google Drive checks
@@ -1028,28 +1028,23 @@ export default function LessonView({
               {activeMediaTab === 'video' && lesson.videoUrl ? (
                 /* Interactive Video Player */
                 <div className="overflow-hidden rounded-2xl relative border border-yellow-border/30 shadow-inner bg-black aspect-[16/9] w-full">
-                  {getEmbedUrl(lesson.videoUrl) ? (
+                  {lesson.videoUrl.match(/\.(mp4|webm|ogg)($|\?)/i) ? (
+                    <video
+                      src={lesson.videoUrl}
+                      className="w-full h-full rounded-2xl"
+                      controls
+                      controlsList="nodownload"
+                      playsInline
+                    />
+                  ) : (
                     <iframe
-                      src={getEmbedUrl(lesson.videoUrl)!}
+                      src={getEmbedUrl(lesson.videoUrl) || lesson.videoUrl}
                       title={lesson.title}
                       className="w-full h-full rounded-2xl border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                       allowFullScreen
+                      sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
                     ></iframe>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-white p-6 text-center bg-slate-900 rounded-2xl">
-                      <span className="text-4xl mb-2">📹</span>
-                      <p className="font-extrabold text-sm text-yellow-400 mb-1">رابط الفيديو الخارجي (مثل جوجل درايف)</p>
-                      <p className="text-xs text-slate-300 max-w-md">يمكنك مشاهدة الفيديو مباشرة بالنقر أدناه للفتح في صفحة منفصلة:</p>
-                      <a
-                        href={lesson.videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 px-6 py-2.5 bg-coral text-white font-black rounded-full hover:bg-coral/90 text-xs transition duration-200 shadow-md transform active:scale-95 inline-block"
-                      >
-                        اضغط لفتح وتشغيل الفيديو 🌐
-                      </a>
-                    </div>
                   )}
                 </div>
               ) : (
