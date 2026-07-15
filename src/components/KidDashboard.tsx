@@ -20,6 +20,18 @@ const UNIT_THEMES: Record<string, { badge: string; border: string; textAccent: s
 export default function KidDashboard({ units, completedLessons, totalScore, onSelectLesson }: KidDashboardProps) {
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
 
+  // Smooth scroll to lessons list when a unit is activated
+  React.useEffect(() => {
+    if (activeUnitId) {
+      setTimeout(() => {
+        const element = document.getElementById(`unit-lessons-${activeUnitId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 150);
+    }
+  }, [activeUnitId]);
+
   const getIcon = (name: string, colorClass: string) => {
     switch (name) {
       case 'Heart': return <Heart className={`w-6 h-6 fill-current ${colorClass}`} />;
@@ -103,6 +115,7 @@ export default function KidDashboard({ units, completedLessons, totalScore, onSe
                 {/* CONDITION-RENDER: LESSONS SHELF */}
                 {isSelected && (
                   <motion.div 
+                    id={`unit-lessons-${unit.id}`}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     transition={{ duration: 0.3 }}
