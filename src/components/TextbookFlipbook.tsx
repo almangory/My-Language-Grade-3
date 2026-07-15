@@ -681,23 +681,39 @@ export default function TextbookFlipbook({ units, completedLessons, onSelectLess
                 {lesson.type === LessonType.Poem ? (
                   /* Poem / Poem stanzas formatting */
                   <div className="space-y-2.5 max-w-xl mx-auto bg-[#FFFDF6] p-4 rounded-xl border border-yellow-border/30 shadow-inner">
-                    {bookStanzasWithOffsets.map((stanza, sIdx) => (
-                      <div key={stanza.id} className="flex flex-col gap-1 text-center py-1.5">
-                        {/* Double hemistich columns layout */}
-                        <div className="grid grid-cols-2 gap-4 font-black text-slate-800 text-[11px] sm:text-xs md:text-sm lg:text-base">
-                          <div className="bg-white/50 p-2 rounded border border-yellow-border/10 text-right pr-3">
-                            {renderBookWordTokens(stanza.text1, stanza.startOffset)}
+                    {bookStanzasWithOffsets.map((stanza, sIdx) => {
+                      const isCenteredSingleLine = !stanza.text2 || !stanza.text2.trim();
+                      if (isCenteredSingleLine) {
+                        return (
+                          <div key={stanza.id} className="flex flex-col gap-1 text-center py-2 bg-coral/5 border border-dashed border-coral/25 rounded-xl p-2.5 my-1.5">
+                            <div className="font-black text-coral text-[11px] sm:text-xs md:text-sm lg:text-base">
+                              {renderBookWordTokens(stanza.text1, stanza.startOffset)}
+                            </div>
+                            {/* Mini divider between stanzas */}
+                            {sIdx < (lesson.stanzas?.length || 0) - 1 && (
+                              <div className="w-12 h-px bg-yellow-border/15 mx-auto mt-1.5"></div>
+                            )}
                           </div>
-                          <div className="bg-white/50 p-2 rounded border border-yellow-border/10 text-left pl-3">
-                            {renderBookWordTokens(stanza.text2, stanza.startOffset + stanza.text2RelOffset)}
+                        );
+                      }
+                      return (
+                        <div key={stanza.id} className="flex flex-col gap-1 text-center py-1.5">
+                          {/* Double hemistich columns layout */}
+                          <div className="grid grid-cols-2 gap-4 font-black text-slate-800 text-[11px] sm:text-xs md:text-sm lg:text-base">
+                            <div className="bg-white/50 p-2 rounded border border-yellow-border/10 text-right pr-3">
+                              {renderBookWordTokens(stanza.text1, stanza.startOffset)}
+                            </div>
+                            <div className="bg-white/50 p-2 rounded border border-yellow-border/10 text-left pl-3">
+                              {renderBookWordTokens(stanza.text2, stanza.startOffset + stanza.text2RelOffset)}
+                            </div>
                           </div>
+                          {/* Mini divider between stanzas */}
+                          {sIdx < (lesson.stanzas?.length || 0) - 1 && (
+                            <div className="w-12 h-px bg-yellow-border/20 mx-auto"></div>
+                          )}
                         </div>
-                        {/* Mini divider between stanzas */}
-                        {sIdx < (lesson.stanzas?.length || 0) - 1 && (
-                          <div className="w-12 h-px bg-yellow-border/20 mx-auto"></div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   /* Normal story prose with proper linebreaks and paragraph separation */

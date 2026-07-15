@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Lesson, LessonType, GrammarRule } from '../types';
-import { Music, Star, BookOpen, Quote, Maximize2, Minimize2, Volume2, X } from 'lucide-react';
+import { Music, Star, BookOpen, Quote, Maximize2, Minimize2, Volume2, X, SlidersHorizontal } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import GrammarCard from './GrammarCard';
 import { playSound } from '../utils';
@@ -383,7 +383,7 @@ function getEmbedUrl(url?: string): string | null {
     const parts = url.split('youtu.be/');
     if (parts[1]) {
       const videoId = parts[1].split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
+      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1&autoplay=1`;
     }
   }
   if (url.includes('youtube.com/watch')) {
@@ -391,18 +391,18 @@ function getEmbedUrl(url?: string): string | null {
       const urlObj = new URL(url);
       const videoId = urlObj.searchParams.get('v');
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
+        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1&autoplay=1`;
       }
     } catch (e) {
       const parts = url.split('v=');
       if (parts[1]) {
         const videoId = parts[1].split('&')[0];
-        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
+        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1&autoplay=1`;
       }
     }
   }
   if (url.includes('youtube.com/embed/')) {
-    return url.includes('?') ? url : `${url}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1`;
+    return url.includes('?') ? `${url}&autoplay=1` : `${url}?rel=0&modestbranding=1&iv_load_policy=3&controls=1&fs=1&autoplay=1`;
   }
   
   // Google Drive checks
@@ -430,6 +430,8 @@ export default function LessonView({
   const [localShowGrammarCard, setLocalShowGrammarCard] = useState<boolean>(false);
   const [isLessonFullscreen, setIsLessonFullscreen] = useState<boolean>(false);
   const [activeMediaTab, setActiveMediaTab] = useState<'image' | 'video'>(lesson.videoUrl ? 'video' : 'image');
+  const mediaContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showReadingSettings, setShowReadingSettings] = useState<boolean>(false);
 
   // Reset tab and player on lesson change
   React.useEffect(() => {
@@ -437,6 +439,13 @@ export default function LessonView({
     setActiveCharIndex(-1);
     setIsAudioPlaying(false);
     setIsAudioMinimized(false);
+
+    // Smooth scroll to the media section (Image or Video)
+    setTimeout(() => {
+      if (mediaContainerRef.current) {
+        mediaContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
   }, [lesson.id]);
 
   React.useEffect(() => {
@@ -733,221 +742,258 @@ export default function LessonView({
         }`}></div>
 
         {/* Reading Settings Toolbar */}
-        <div className={`mb-6 pb-6 border-b-2 border-dashed flex flex-col lg:flex-row items-center justify-between gap-4 select-none relative z-10 transition-colors duration-300 ${
+        <div className={`mb-6 pb-6 border-b-2 border-dashed flex flex-col gap-4 select-none relative z-10 transition-colors duration-300 ${
           readingMode === 'standard' 
             ? 'border-yellow-border/30 text-charcoal' 
             : readingMode === 'warm' 
             ? 'border-amber-300/30 text-[#4E3620]' 
             : 'border-[#4A3D33]/40 text-[#F4ECE1]'
         }`}>
-          <div className="flex items-center gap-3 w-full lg:w-auto justify-start">
-            <span className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors duration-300 ${
-              readingMode === 'standard' ? 'bg-coral/10 text-coral' : readingMode === 'warm' ? 'bg-amber-100 text-amber-700' : 'bg-amber-900/40 text-yellow-accent'
-            }`}>
-              📖
-            </span>
-            <div className="text-right">
-              <h4 className={`text-sm font-black transition-colors duration-300 ${
-                readingMode === 'standard' ? 'text-charcoal' : readingMode === 'warm' ? 'text-[#4E3620]' : 'text-[#F4ECE1]'
-              }`}>إعدادات القراءة والمظهر</h4>
-              <p className={`text-[10px] font-bold transition-colors duration-300 ${
-                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
-              }`}>تحكم في وضع المظهر وسُمك وحجم وعرض الخطوط لراحة عينيك</p>
+          {/* Header row with title and action buttons */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+            <div className="flex items-center gap-3 w-full md:w-auto justify-start">
+              <span className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors duration-300 ${
+                readingMode === 'standard' ? 'bg-coral/10 text-coral' : readingMode === 'warm' ? 'bg-amber-100 text-amber-700' : 'bg-amber-900/40 text-yellow-accent'
+              }`}>
+                📖
+              </span>
+              <div className="text-right">
+                <h4 className={`text-sm font-black transition-colors duration-300 ${
+                  readingMode === 'standard' ? 'text-charcoal' : readingMode === 'warm' ? 'text-[#4E3620]' : 'text-[#F4ECE1]'
+                }`}>إعدادات القراءة والمظهر</h4>
+                <p className={`text-[10px] font-bold transition-colors duration-300 ${
+                  readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+                }`}>تحكم في وضع المظهر وسُمك وحجم وعرض الخطوط لراحة عينيك</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-start md:justify-end">
+              {/* Toggle Formatting settings */}
+              <button
+                onClick={() => {
+                  setShowReadingSettings(!showReadingSettings);
+                  try { playSound('click'); } catch(e){}
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black shadow-sm border transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+                  showReadingSettings 
+                    ? 'bg-coral text-white border-coral' 
+                    : readingMode === 'standard'
+                    ? 'bg-cream text-charcoal border-yellow-border hover:bg-yellow-accent/10'
+                    : readingMode === 'warm'
+                    ? 'bg-[#FAF1DC] text-[#4E3620] border-amber-300 hover:bg-amber-300/20'
+                    : 'bg-[#1E1E1E] text-[#F4ECE1] border-[#4A3D33] hover:bg-[#4A3D33]/40'
+                }`}
+                title="ضبط تنسيق الدرس والخط واللون"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 animate-pulse" />
+                <span>ضبط تنسيق الدرس ⚙️</span>
+              </button>
+
+              {/* Fullscreen Toggle */}
+              <button
+                onClick={() => {
+                  setIsLessonFullscreen(!isLessonFullscreen);
+                  try { playSound('click'); } catch(e){}
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black shadow-sm border transition-all hover:scale-105 active:scale-95 cursor-pointer bg-amber-400 hover:bg-amber-500 text-slate-900 border-white"
+                title={isLessonFullscreen ? "تصغير الشاشة 🗗" : "ملء الشاشة 📺"}
+              >
+                {isLessonFullscreen ? (
+                  <>
+                    <Minimize2 className="w-3.5 h-3.5" />
+                    <span>الخروج من ملء الشاشة</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span>ملء الشاشة 📺</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
-            {/* Theme / Reading Mode Selector */}
-            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
-              readingMode === 'standard' 
-                ? 'bg-cream/70 border-yellow-border/50' 
-                : readingMode === 'warm' 
-                ? 'bg-[#FAF1DC] border-amber-300/50' 
-                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
-            }`}>
-              <button
-                onClick={() => setReadingMode('standard')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  readingMode === 'standard'
-                    ? 'bg-white text-charcoal shadow-sm border border-yellow-border/50'
-                    : 'text-slate-600 hover:text-charcoal'
-                }`}
-                title="الوضع الافتراضي الأبيض"
-              >
-                ☀️ عادي
-              </button>
-              <button
-                onClick={() => setReadingMode('warm')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  readingMode === 'warm'
-                    ? 'bg-[#FFF9E6] text-[#4E3620] shadow-sm border border-amber-300/60'
-                    : readingMode === 'standard' ? 'text-slate-600 hover:text-charcoal' : 'text-[#9C8F84] hover:text-[#F4ECE1]'
-                }`}
-                title="الوضع الدافئ المريح جداً للعين"
-              >
-                🌾 دافئ
-              </button>
-              <button
-                onClick={() => setReadingMode('soft-dark')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  readingMode === 'soft-dark'
-                    ? 'bg-[#2D231D] text-[#F4ECE1] shadow-sm border border-[#4A3D33]'
-                    : readingMode === 'standard' ? 'text-slate-600 hover:text-charcoal' : 'text-[#826E5D]'
-                }`}
-                title="الوضع الهادئ لقرائة ليلية مريحة"
-              >
-                🌙 هادئ
-              </button>
-            </div>
 
-            {/* Font Size Selector */}
-            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
-              readingMode === 'standard' 
-                ? 'bg-cream/70 border-yellow-border/50' 
-                : readingMode === 'warm' 
-                ? 'bg-[#FAF1DC] border-amber-300/50' 
-                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
-            }`}>
-              <span className={`text-[10px] font-black px-1 ${
-                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
-              }`}>الحجم:</span>
-              <button
-                onClick={() => setFontSize('sm')}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-black transition-all cursor-pointer ${
-                  fontSize === 'sm' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
-                }`}
-                title="خط صغير"
+          {/* Conditional Layout Formatting Options */}
+          <AnimatePresence>
+            {showReadingSettings && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-wrap items-center gap-3 w-full justify-start pt-3 border-t border-dashed border-yellow-border/20"
               >
-                أ
-              </button>
-              <button
-                onClick={() => setFontSize('md')}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[14px] font-black transition-all cursor-pointer ${
-                  fontSize === 'md' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
-                }`}
-                title="خط متوسط"
-              >
-                أ
-              </button>
-              <button
-                onClick={() => setFontSize('lg')}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[18px] font-black transition-all cursor-pointer ${
-                  fontSize === 'lg' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
-                }`}
-                title="خط كبير"
-              >
-                أ
-              </button>
-              <button
-                onClick={() => setFontSize('xl')}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-[22px] font-black transition-all cursor-pointer ${
-                  fontSize === 'xl' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
-                }`}
-                title="خط ضخم جداً"
-              >
-                أ+
-              </button>
-            </div>
+                {/* Theme / Reading Mode Selector */}
+                <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+                  readingMode === 'standard' 
+                    ? 'bg-cream/70 border-yellow-border/50' 
+                    : readingMode === 'warm' 
+                    ? 'bg-[#FAF1DC] border-amber-300/50' 
+                    : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+                }`}>
+                  <button
+                    onClick={() => setReadingMode('standard')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      readingMode === 'standard'
+                        ? 'bg-white text-charcoal shadow-sm border border-yellow-border/50'
+                        : 'text-slate-600 hover:text-charcoal'
+                    }`}
+                    title="الوضع الافتراضي الأبيض"
+                  >
+                    ☀️ عادي
+                  </button>
+                  <button
+                    onClick={() => setReadingMode('warm')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      readingMode === 'warm'
+                        ? 'bg-[#FFF9E6] text-[#4E3620] shadow-sm border border-amber-300/60'
+                        : readingMode === 'standard' ? 'text-slate-600 hover:text-charcoal' : 'text-[#9C8F84] hover:text-[#F4ECE1]'
+                    }`}
+                    title="الوضع الدافئ المريح جداً للعين"
+                  >
+                    🌾 دافئ
+                  </button>
+                  <button
+                    onClick={() => setReadingMode('soft-dark')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      readingMode === 'soft-dark'
+                        ? 'bg-[#2D231D] text-[#F4ECE1] shadow-sm border border-[#4A3D33]'
+                        : readingMode === 'standard' ? 'text-slate-600 hover:text-charcoal' : 'text-[#826E5D]'
+                    }`}
+                    title="الوضع الهادئ لقرائة ليلية مريحة"
+                  >
+                    🌙 هادئ
+                  </button>
+                </div>
 
-            {/* Font Weight Selector (سُمك الخط) */}
-            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
-              readingMode === 'standard' 
-                ? 'bg-cream/70 border-yellow-border/50' 
-                : readingMode === 'warm' 
-                ? 'bg-[#FAF1DC] border-amber-300/50' 
-                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
-            }`}>
-              <span className={`text-[10px] font-black px-1 ${
-                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
-              }`}>السُّمك:</span>
-              <button
-                onClick={() => setFontWeight('normal')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
-                  fontWeight === 'normal' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
-                }`}
-              >
-                عادي
-              </button>
-              <button
-                onClick={() => setFontWeight('bold')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
-                  fontWeight === 'bold' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
-                }`}
-              >
-                عريض
-              </button>
-              <button
-                onClick={() => setFontWeight('black')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
-                  fontWeight === 'black' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
-                }`}
-              >
-                عريض جداً
-              </button>
-            </div>
+                {/* Font Size Selector */}
+                <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+                  readingMode === 'standard' 
+                    ? 'bg-cream/70 border-yellow-border/50' 
+                    : readingMode === 'warm' 
+                    ? 'bg-[#FAF1DC] border-amber-300/50' 
+                    : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+                }`}>
+                  <span className={`text-[10px] font-black px-1 ${
+                    readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+                  }`}>الحجم:</span>
+                  <button
+                    onClick={() => setFontSize('sm')}
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-black transition-all cursor-pointer ${
+                      fontSize === 'sm' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                    title="خط صغير"
+                  >
+                    أ
+                  </button>
+                  <button
+                    onClick={() => setFontSize('md')}
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-[14px] font-black transition-all cursor-pointer ${
+                      fontSize === 'md' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                    title="خط متوسط"
+                  >
+                    أ
+                  </button>
+                  <button
+                    onClick={() => setFontSize('lg')}
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-[18px] font-black transition-all cursor-pointer ${
+                      fontSize === 'lg' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                    title="خط كبير"
+                  >
+                    أ
+                  </button>
+                  <button
+                    onClick={() => setFontSize('xl')}
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-[22px] font-black transition-all cursor-pointer ${
+                      fontSize === 'xl' ? 'bg-coral text-white shadow-sm' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                    title="خط ضخم جداً"
+                  >
+                    أ+
+                  </button>
+                </div>
 
-            {/* Column Width / Text Width Control (عرض النص) */}
-            <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
-              readingMode === 'standard' 
-                ? 'bg-cream/70 border-yellow-border/50' 
-                : readingMode === 'warm' 
-                ? 'bg-[#FAF1DC] border-amber-300/50' 
-                : 'bg-[#1E1E1E] border-[#4A3D33]/50'
-            }`}>
-              <span className={`text-[10px] font-black px-1 ${
-                readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
-              }`}>عرض النص:</span>
-              <button
-                onClick={() => setTextWidth('narrow')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
-                  textWidth === 'narrow' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
-                }`}
-                title="عرض النص ضيق ومريح للتركيز"
-              >
-                ضيق
-              </button>
-              <button
-                onClick={() => setTextWidth('medium')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
-                  textWidth === 'medium' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
-                }`}
-                title="عرض النص متوسط"
-              >
-                متوسط
-              </button>
-              <button
-                onClick={() => setTextWidth('wide')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
-                  textWidth === 'wide' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
-                }`}
-                title="عرض النص كامل"
-              >
-                كامل
-              </button>
-            </div>
+                {/* Font Weight Selector (سُمك الخط) */}
+                <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+                  readingMode === 'standard' 
+                    ? 'bg-cream/70 border-yellow-border/50' 
+                    : readingMode === 'warm' 
+                    ? 'bg-[#FAF1DC] border-amber-300/50' 
+                    : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+                }`}>
+                  <span className={`text-[10px] font-black px-1 ${
+                    readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+                  }`}>السُّمك:</span>
+                  <button
+                    onClick={() => setFontWeight('normal')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                      fontWeight === 'normal' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                  >
+                    عادي
+                  </button>
+                  <button
+                    onClick={() => setFontWeight('bold')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                      fontWeight === 'bold' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                  >
+                    عريض
+                  </button>
+                  <button
+                    onClick={() => setFontWeight('black')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                      fontWeight === 'black' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                  >
+                    عريض جداً
+                  </button>
+                </div>
 
-            {/* Fullscreen Toggle */}
-            <button
-              onClick={() => {
-                setIsLessonFullscreen(!isLessonFullscreen);
-                try { playSound('click'); } catch(e){}
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black shadow-sm border transition-all hover:scale-105 active:scale-95 cursor-pointer bg-amber-400 hover:bg-amber-500 text-slate-900 border-white"
-              title={isLessonFullscreen ? "تصغير الشاشة 🗗" : "ملء الشاشة 📺"}
-            >
-              {isLessonFullscreen ? (
-                <>
-                  <Minimize2 className="w-3.5 h-3.5" />
-                  <span>الخروج من ملء الشاشة</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5" />
-                  <span>ملء الشاشة 📺</span>
-                </>
-              )}
-            </button>
-          </div>
+                {/* Column Width / Text Width Control (عرض النص) */}
+                <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors duration-300 ${
+                  readingMode === 'standard' 
+                    ? 'bg-cream/70 border-yellow-border/50' 
+                    : readingMode === 'warm' 
+                    ? 'bg-[#FAF1DC] border-amber-300/50' 
+                    : 'bg-[#1E1E1E] border-[#4A3D33]/50'
+                }`}>
+                  <span className={`text-[10px] font-black px-1 ${
+                    readingMode === 'standard' ? 'text-slate-500' : readingMode === 'warm' ? 'text-[#826E5D]' : 'text-[#9C8F84]'
+                  }`}>عرض النص:</span>
+                  <button
+                    onClick={() => setTextWidth('narrow')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                      textWidth === 'narrow' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                    title="عرض النص ضيق ومريح للتركيز"
+                  >
+                    ضيق
+                  </button>
+                  <button
+                    onClick={() => setTextWidth('medium')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                      textWidth === 'medium' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                    title="عرض النص متوسط"
+                  >
+                    متوسط
+                  </button>
+                  <button
+                    onClick={() => setTextWidth('wide')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                      textWidth === 'wide' ? 'bg-coral text-white' : 'text-slate-500 hover:bg-white/40'
+                    }`}
+                    title="عرض النص كامل"
+                  >
+                    كامل
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Floating exit fullscreen button for convenience */}
@@ -967,7 +1013,7 @@ export default function LessonView({
 
         {/* Beautiful Lesson Illustration (Child-appealing, with a Polaroid/Frame effect) */}
         {(LESSON_ILLUSTRATIONS[lesson.id] || UNIT_ILLUSTRATIONS[lesson.unitId]) && (
-          <div className="mb-8 md:pr-10 flex flex-col items-center">
+          <div ref={mediaContainerRef} className="mb-8 md:pr-10 flex flex-col items-center">
             <div className={`w-full max-w-2xl p-4 rounded-3xl border-2 shadow-md transform hover:rotate-1 hover:scale-[1.01] transition-all duration-300 relative ${
               readingMode === 'standard' 
                 ? 'bg-[#FFFBF0] border-yellow-border' 
@@ -1035,6 +1081,7 @@ export default function LessonView({
                       controls
                       controlsList="nodownload"
                       playsInline
+                      autoPlay
                     />
                   ) : (
                     <iframe
@@ -1104,27 +1151,48 @@ export default function LessonView({
         {lesson.type === LessonType.Poem && lesson.stanzas ? (
           /* Poetry Layout - classical Arabic bicolumn display */
           <div className={`flex flex-col gap-6 md:gap-8 mx-auto py-4 select-text transition-all duration-300 ${textWidthClass}`}>
-            {stanzasWithOffsets.map((stanza, index) => (
-              <div 
-                key={stanza.id}
-                className={`grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 items-center text-center group transition-all duration-200 p-2.5 rounded-2xl border border-transparent ${getStanzaHoverBg(readingMode)}`}
-              >
-                {/* Right side (الصدر) */}
-                <div className={`font-serif leading-relaxed md:text-left md:pl-2 ${fontSizeClass} ${fontWeightClass} ${getTextColor(readingMode)}`}>
-                  {renderHemistichTokens(stanza.text1, stanza.startOffset)}
-                </div>
+            {stanzasWithOffsets.map((stanza, index) => {
+              const isCenteredSingleLine = !stanza.text2 || !stanza.text2.trim();
+              if (isCenteredSingleLine) {
+                return (
+                  <div 
+                    key={stanza.id}
+                    className={`flex justify-center items-center text-center group transition-all duration-200 p-3 rounded-2xl border-2 border-dashed mx-auto w-full max-w-lg ${
+                      readingMode === 'standard' 
+                        ? 'border-coral/20 bg-coral/5 text-coral' 
+                        : readingMode === 'warm' 
+                        ? 'border-amber-400/30 bg-amber-50/20 text-amber-800' 
+                        : 'border-[#4A3D33]/40 bg-[#2D231D]/40 text-yellow-accent'
+                    }`}
+                  >
+                    <div className={`font-serif leading-relaxed text-center font-black ${fontSizeClass} ${fontWeightClass}`}>
+                      {renderHemistichTokens(stanza.text1, stanza.startOffset)}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div 
+                  key={stanza.id}
+                  className={`grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 items-center text-center group transition-all duration-200 p-2.5 rounded-2xl border border-transparent ${getStanzaHoverBg(readingMode)}`}
+                >
+                  {/* Right side (الصدر) */}
+                  <div className={`font-serif leading-relaxed md:text-left md:pl-2 ${fontSizeClass} ${fontWeightClass} ${getTextColor(readingMode)}`}>
+                    {renderHemistichTokens(stanza.text1, stanza.startOffset)}
+                  </div>
 
-                {/* Decorative Separator */}
-                <div className="flex justify-center text-coral scale-90 group-hover:scale-110 group-hover:rotate-45 transition-transform duration-300">
-                  {index % 2 === 0 ? <Music className="w-5 h-5 fill-current" /> : <Star className="w-5 h-5 fill-current" />}
-                </div>
+                  {/* Decorative Separator */}
+                  <div className="flex justify-center text-coral scale-90 group-hover:scale-110 group-hover:rotate-45 transition-transform duration-300">
+                    {index % 2 === 0 ? <Music className="w-5 h-5 fill-current" /> : <Star className="w-5 h-5 fill-current" />}
+                  </div>
 
-                {/* Left side (العجز) */}
-                <div className={`font-serif leading-relaxed md:text-right md:pr-2 ${fontSizeClass} ${fontWeightClass} ${getTextColor(readingMode)}`}>
-                  {renderHemistichTokens(stanza.text2, stanza.startOffset + stanza.text2RelOffset)}
+                  {/* Left side (العجز) */}
+                  <div className={`font-serif leading-relaxed md:text-right md:pr-2 ${fontSizeClass} ${fontWeightClass} ${getTextColor(readingMode)}`}>
+                    {renderHemistichTokens(stanza.text2, stanza.startOffset + stanza.text2RelOffset)}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           /* Normal Lesson Text Layout */
